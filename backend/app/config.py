@@ -11,6 +11,14 @@ class Settings(BaseSettings):
     allowed_origins: str = "*"
     service_endpoints_json: dict[str, str] = Field(default_factory=dict)
 
+    aws_region: str = "us-west-1"
+    dynamodb_devices_table: str = "cityserve-devices"
+    dynamodb_procedures_table: str = "cityserve-procedures"
+    s3_compliance_bucket: str = ""
+
+    jwt_secret_key: str = "hackathon-secret-key-change-in-prod"
+    jwt_expire_minutes: int = 480
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     @field_validator("service_endpoints_json", mode="before")
@@ -20,7 +28,6 @@ class Settings(BaseSettings):
             return value
         if not value:
             return {}
-        # pydantic settings handles JSON string parsing in most cases.
         return value
 
 
