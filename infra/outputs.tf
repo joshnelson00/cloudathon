@@ -1,0 +1,25 @@
+# NOTE: The CloudFront URL takes 10–15 minutes to go live after the first
+# terraform apply. If you see a 403 or blank page immediately, wait and retry.
+output "cloudfront_url" {
+  value = "https://${aws_cloudfront_distribution.frontend.domain_name}"
+}
+
+output "s3_bucket_name" {
+  value = aws_s3_bucket.frontend.bucket
+}
+
+output "cloudfront_distribution_id" {
+  value = aws_cloudfront_distribution.frontend.id
+}
+
+output "ec2_instance_id" {
+  value = aws_instance.app.id
+}
+
+output "ec2_public_ip" {
+  value = aws_instance.app.public_ip
+}
+
+output "ec2_public_dns" {
+  value = aws_instance.app.public_dns
+}
