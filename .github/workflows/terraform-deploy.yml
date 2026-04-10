@@ -88,45 +88,51 @@ jobs:
           fi
 
       - name: Adopt existing AWS resources into Terraform state
+        id: adopt
         working-directory: infra
         run: |
-          set -euo pipefail
+          set +e  # Don't exit on individual import failures
 
           # Import Security Group
           sg_id=$(aws ec2 describe-security-groups --filters "Name=group-name,Values=hackathon-dev-ec2-sg" --query "SecurityGroups[0].GroupId" --output text 2>/dev/null || true)
           if [[ -n "$sg_id" && "$sg_id" != "None" ]]; then
-            terraform import -no-input aws_security_group.ec2 "$sg_id" 2>/dev/null || true
+            terraform import -no-input aws_security_group.ec2 "$sg_id" || true
           fi
 
           # Import IAM EC2 Role
-          terraform import -no-input aws_iam_role.ec2 hackathon-dev-ec2-role 2>/dev/null || true
+          terraform import -no-input aws_iam_role.ec2 hackathon-dev-ec2-role || true
 
           # Import IAM Instance Profile
-          terraform import -no-input aws_iam_instance_profile.ec2 hackathon-dev-ec2-profile 2>/dev/null || true
+          terraform import -no-input aws_iam_instance_profile.ec2 hackathon-dev-ec2-profile || true
 
           # Import S3 Bucket
           bucket_name=$(aws s3api list-buckets --query "Buckets[?contains(Name, 'hackathon-dev-frontend')].Name" --output text 2>/dev/null || true)
           if [[ -n "$bucket_name" && "$bucket_name" != "None" ]]; then
-            terraform import -no-input aws_s3_bucket.frontend "$bucket_name" 2>/dev/null || true
-            terraform import -no-input aws_s3_bucket_public_access_block.frontend "$bucket_name" 2>/dev/null || true
+            terraform import -no-input aws_s3_bucket.frontend "$bucket_name" || true
+            terraform import -no-input aws_s3_bucket_public_access_block.frontend "$bucket_name" || true
           fi
 
           # Import DynamoDB Tables
-          terraform import -no-input aws_dynamodb_table.devices hackathon-dev-devices 2>/dev/null || true
-          terraform import -no-input aws_dynamodb_table.procedures hackathon-dev-procedures 2>/dev/null || true
+          terraform import -no-input aws_dynamodb_table.devices hackathon-dev-devices || true
+          terraform import -no-input aws_dynamodb_table.procedures hackathon-dev-procedures || true
 
           # Import Lambda Role
-          terraform import -no-input aws_iam_role.lambda hackathon-dev-lambda-role 2>/dev/null || true
+          terraform import -no-input aws_iam_role.lambda hackathon-dev-lambda-role || true
 
           # Import CloudFront OAC
           oac_id=$(aws cloudfront list-origin-access-controls --query "OriginAccessControlList.Items[?Name=='hackathon-dev-oac'].Id" --output text 2>/dev/null || true)
           if [[ -n "$oac_id" && "$oac_id" != "None" ]]; then
-            terraform import -no-input aws_cloudfront_origin_access_control.frontend "$oac_id" 2>/dev/null || true
+            terraform import -no-input aws_cloudfront_origin_access_control.frontend "$oac_id" || true
           fi
+
+          set -e
+          echo "State adoption complete"
 
       - working-directory: infra
         if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.infra_changed == 'true' || needs.changes.outputs.workflow_changed == 'true' || steps.ec2check.outputs.ec2_missing == 'true'
-        run: terraform plan -out=tfplan
+        run: |
+          rm -f tfplan
+          terraform plan -out=tfplan
 
       - working-directory: infra
         if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.infra_changed == 'true' || needs.changes.outputs.workflow_changed == 'true' || steps.ec2check.outputs.ec2_missing == 'true'
