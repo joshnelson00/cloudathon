@@ -6,6 +6,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    archive = {
+      source  = "hashicorp/archive"
+      version = "~> 2.5"
+    }
   }
 }
 
@@ -37,8 +41,11 @@ data "aws_ami" "amazon_linux" {
 }
 
 locals {
-  prefix      = "${var.project_name}-${var.environment}"
-  bucket_name = var.frontend_bucket_name != "" ? var.frontend_bucket_name : "${local.prefix}-frontend-${data.aws_caller_identity.current.account_id}"
+  prefix                 = "${var.project_name}-${var.environment}"
+  bucket_name            = var.frontend_bucket_name != "" ? var.frontend_bucket_name : "${local.prefix}-frontend-${data.aws_caller_identity.current.account_id}"
+  devices_table_name     = var.dynamodb_devices_table_name != "" ? var.dynamodb_devices_table_name : "${local.prefix}-devices"
+  procedures_table_name  = var.dynamodb_procedures_table_name != "" ? var.dynamodb_procedures_table_name : "${local.prefix}-procedures"
+  compliance_lambda_name = var.lambda_compliance_function_name != "" ? var.lambda_compliance_function_name : "${local.prefix}-compliance-doc-generator"
 }
 
 resource "aws_security_group" "ec2" {
@@ -153,6 +160,43 @@ resource "aws_iam_role_policy_attachment" "ec2_s3_read" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
 }
 
+resource "aws_iam_role_policy" "ec2_app_access" {
+  name = "${local.prefix}-ec2-app-access"
+  role = aws_iam_role.ec2.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:Query"
+        ]
+        Resource = [
+          aws_dynamodb_table.devices.arn,
+          aws_dynamodb_table.procedures.arn
+        ]
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["lambda:InvokeFunction"]
+        Resource = [aws_lambda_function.compliance_doc_generator.arn]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject"
+        ]
+        Resource = ["${aws_s3_bucket.frontend.arn}/${var.compliance_docs_prefix}*"]
+      }
+    ]
+  })
+}
+
 resource "aws_iam_instance_profile" "ec2" {
   name = "${local.prefix}-ec2-profile"
   role = aws_iam_role.ec2.name
@@ -164,33 +208,37 @@ resource "aws_s3_bucket" "frontend" {
 
 resource "aws_s3_bucket_public_access_block" "frontend" {
   bucket                  = aws_s3_bucket.frontend.id
-  block_public_acls       = false
-  block_public_policy     = false
-  ignore_public_acls      = false
-  restrict_public_buckets = false
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
 
-resource "aws_s3_bucket_website_configuration" "frontend" {
-  bucket = aws_s3_bucket.frontend.id
 
-  index_document {
-    suffix = "index.html"
-  }
-
-  error_document {
-    key = "index.html"
-  }
+resource "aws_cloudfront_origin_access_control" "frontend" {
+  name                              = "${local.prefix}-oac"
+  description                       = "OAC for frontend S3 bucket"
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
 }
 
-resource "aws_s3_bucket_policy" "frontend_public" {
+resource "aws_s3_bucket_policy" "frontend_private" {
   bucket = aws_s3_bucket.frontend.id
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect = "Allow"
-      Principal = "*"
-      Action = ["s3:GetObject"]
-      Resource = ["${aws_s3_bucket.frontend.arn}/*"]
+      Effect    = "Allow"
+      Principal = {
+        Service = "cloudfront.amazonaws.com"
+      }
+      Action    = ["s3:GetObject"]
+      Resource  = ["${aws_s3_bucket.frontend.arn}/*"]
+      Condition = {
+        StringEquals = {
+          "aws:SourceArn" = "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.frontend.id}"
+        }
+      }
     }]
   })
 }
@@ -200,21 +248,15 @@ resource "aws_cloudfront_distribution" "frontend" {
   default_root_object = "index.html"
 
   origin {
-    domain_name = aws_s3_bucket_website_configuration.frontend.website_endpoint
-    origin_id   = "frontendS3Website"
-
-    custom_origin_config {
-      http_port              = 80
-      https_port             = 443
-      origin_protocol_policy = "http-only"
-      origin_ssl_protocols   = ["TLSv1.2"]
-    }
+    domain_name              = aws_s3_bucket.frontend.bucket_regional_domain_name
+    origin_id                = "frontendS3"
+    origin_access_control_id = aws_cloudfront_origin_access_control.frontend.id
   }
 
   default_cache_behavior {
     allowed_methods        = ["GET", "HEAD", "OPTIONS"]
     cached_methods         = ["GET", "HEAD"]
-    target_origin_id       = "frontendS3Website"
+    target_origin_id       = "frontendS3"
     viewer_protocol_policy = "redirect-to-https"
 
     forwarded_values {
@@ -234,4 +276,122 @@ resource "aws_cloudfront_distribution" "frontend" {
   viewer_certificate {
     cloudfront_default_certificate = true
   }
+}
+
+resource "aws_dynamodb_table" "devices" {
+  name         = local.devices_table_name
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "device_id"
+
+  attribute {
+    name = "device_id"
+    type = "S"
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "aws_dynamodb_table" "procedures" {
+  name         = local.procedures_table_name
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "procedure_id"
+
+  attribute {
+    name = "procedure_id"
+    type = "S"
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "aws_iam_role" "lambda" {
+  name = "${local.prefix}-lambda-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = "sts:AssumeRole"
+      Principal = {
+        Service = "lambda.amazonaws.com"
+      }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "lambda_basic_execution" {
+  role       = aws_iam_role.lambda.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+resource "aws_iam_role_policy" "lambda_data_access" {
+  name = "${local.prefix}-lambda-data-access"
+  role = aws_iam_role.lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:Query"
+        ]
+        Resource = [
+          aws_dynamodb_table.devices.arn,
+          aws_dynamodb_table.procedures.arn
+        ]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject"
+        ]
+        Resource = ["${aws_s3_bucket.frontend.arn}/${var.compliance_docs_prefix}*"]
+      }
+    ]
+  })
+}
+
+data "archive_file" "compliance_doc_generator" {
+  type        = "zip"
+  source_file = "${path.module}/lambda/compliance_doc_generator.py"
+  output_path = "${path.module}/.terraform/compliance_doc_generator.zip"
+}
+
+resource "aws_lambda_function" "compliance_doc_generator" {
+  function_name    = local.compliance_lambda_name
+  role             = aws_iam_role.lambda.arn
+  runtime          = "python3.12"
+  handler          = "compliance_doc_generator.lambda_handler"
+  filename         = data.archive_file.compliance_doc_generator.output_path
+  source_code_hash = data.archive_file.compliance_doc_generator.output_base64sha256
+  timeout          = var.lambda_timeout_seconds
+  memory_size      = var.lambda_memory_mb
+
+  environment {
+    variables = {
+      DEVICES_TABLE_NAME    = aws_dynamodb_table.devices.name
+      PROCEDURES_TABLE_NAME = aws_dynamodb_table.procedures.name
+      COMPLIANCE_BUCKET     = aws_s3_bucket.frontend.bucket
+      COMPLIANCE_PREFIX     = var.compliance_docs_prefix
+    }
+  }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.lambda_basic_execution,
+    aws_iam_role_policy.lambda_data_access
+  ]
+}
+
+resource "aws_cloudwatch_log_group" "lambda_compliance_doc_generator" {
+  name              = "/aws/lambda/${aws_lambda_function.compliance_doc_generator.function_name}"
+  retention_in_days = 14
 }
