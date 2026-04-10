@@ -23,3 +23,19 @@ output "ec2_public_ip" {
 output "ec2_public_dns" {
   value = aws_instance.app.public_dns
 }
+
+output "dynamodb_devices_table_name" {
+  value = aws_dynamodb_table.devices.name
+}
+
+output "dynamodb_procedures_table_name" {
+  value = aws_dynamodb_table.procedures.name
+}
+
+output "lambda_compliance_function_name" {
+  value = aws_lambda_function.compliance_doc_generator.function_name
+}
+
+output "lambda_compliance_function_arn" {
+  value = aws_lambda_function.compliance_doc_generator.arn
+}
