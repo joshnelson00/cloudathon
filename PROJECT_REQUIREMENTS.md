@@ -96,42 +96,119 @@ INTAKE → IDENTIFICATION → PROCEDURE → VERIFICATION → DOCUMENTED → CLOS
 
 ### Device Types and Procedures
 
+> Source: NIST SP 800-88 Rev 1 — Appendix G (Certificate of Media Sanitization)
+> The certificate is issued per **storage media (drive)**, not per device chassis.
+> Drive details are captured during Step 1 of every procedure, not at intake.
+
 | Device Type | Storage Tech | NIST 800-88 Method | Required Steps |
 |---|---|---|---|
-| HDD Laptop/Desktop | Spinning disk | Purge (overwrite) | 3-pass wipe → verify → log |
-| SSD Laptop/Desktop | Flash storage | Purge (ATA Secure Erase) or Destroy | Secure erase command → verify → log |
-| Tablet / Mobile | eMMC / Flash | Purge or factory reset | Full factory reset → verify → log |
-| External Drive | HDD or SSD | Same as above by sub-type | Detect type → appropriate method → log |
-| Device with no usable storage | N/A | Clear (power cycle) | Confirm inoperable → log |
+| HDD Laptop/Desktop | Spinning disk | Purge (overwrite) | Record drive info → 3-pass wipe → verify → label → log |
+| SSD Laptop/Desktop | Flash storage | Purge (ATA Secure Erase) | Record drive info → ATA Secure Erase → verify → label → log |
+| Tablet / Mobile | eMMC / Flash | Purge (factory reset) | Record device info → full factory reset → verify → label → log |
+| External Drive (HDD) | Spinning disk | Purge (overwrite) | Record drive info → 3-pass wipe → verify → label → log |
+| External Drive (SSD) | Flash storage | Purge (ATA Secure Erase) | Record drive info → ATA Secure Erase → verify → label → log |
+| Device with no usable storage | N/A | Clear (power cycle) | Confirm inoperable → document → log |
+
+### Hardcoded Procedure Steps (per NIST SP 800-88 Appendix G)
+
+All procedures share a **Step 1: Record Drive Details** where the worker physically inspects
+the drive and enters the information that will appear on the compliance certificate.
+
+**`laptop_hdd` — HDD Purge (3-pass overwrite)**
+```
+Step 1: Record drive details
+        Worker enters: drive_serial, drive_manufacturer, drive_model, drive_capacity_gb
+Step 2: Boot device and confirm HDD is detected by the OS or wipe tool
+Step 3: Run 3-pass overwrite using approved wipe tool (e.g. DBAN, Eraser)
+        Worker enters: tool_name, tool_version
+Step 4: Confirm tool reports successful completion — record pass/fail
+Step 5: Affix NIST-compliant destruction label to the drive
+Step 6: Record completion — system auto-logs timestamp and worker ID
+```
+
+**`laptop_ssd` — SSD Purge (ATA Secure Erase)**
+```
+Step 1: Record drive details
+        Worker enters: drive_serial, drive_manufacturer, drive_model, drive_capacity_gb
+Step 2: Boot to BIOS/UEFI and confirm SSD is detected
+Step 3: Run ATA Secure Erase command using approved tool (e.g. hdparm, manufacturer tool)
+        Worker enters: tool_name, tool_version
+Step 4: Confirm tool reports successful completion — record pass/fail
+Step 5: Affix NIST-compliant destruction label to the drive
+Step 6: Record completion — system auto-logs timestamp and worker ID
+```
+
+**`tablet` — eMMC/Flash Purge (Factory Reset)**
+```
+Step 1: Record device details
+        Worker enters: device_serial, device_manufacturer, device_model, storage_capacity_gb
+Step 2: Disable factory reset protection / remove Google or Apple account
+Step 3: Perform full factory reset via device settings menu
+Step 4: Confirm device boots to setup wizard (confirms wipe succeeded)
+Step 5: Affix NIST-compliant destruction label
+Step 6: Record completion — system auto-logs timestamp and worker ID
+```
 
 ---
 
 ## Data Model (DynamoDB)
 
+> Procedures are hardcoded in the backend (Python dict), not stored in DynamoDB.
+> DynamoDB stores only device records and step completion logs.
+
 ### Table: `devices`
+
+**Chassis fields — captured at intake**
 
 | Field | Type | Description |
 |---|---|---|
 | `device_id` | String (PK) | UUID generated at intake |
-| `serial_number` | String | Entered by worker at intake |
-| `device_type` | String | `laptop_hdd`, `laptop_ssd`, `tablet`, `drive_external`, etc. |
-| `make_model` | String | e.g. "Dell Latitude 5400" |
+| `chassis_serial` | String | Chassis/asset serial number — entered at intake |
+| `device_type` | String | `laptop_hdd`, `laptop_ssd`, `tablet`, `drive_external_hdd`, `drive_external_ssd` |
+| `chassis_make_model` | String | e.g. "Dell Latitude 5400" |
 | `intake_timestamp` | String (ISO 8601) | When device was entered |
 | `worker_id` | String | Who is processing this device |
 | `status` | String | `intake` / `in_progress` / `verified` / `documented` / `closed` |
-| `procedure_id` | String | Which procedure template was applied |
-| `steps_completed` | List | List of completed step IDs with timestamps |
-| `compliance_doc_url` | String | S3 URL to generated PDF |
-| `notes` | String | Free-text worker notes |
+| `procedure_id` | String | Which hardcoded procedure was assigned (e.g. `laptop_hdd`) |
 
-### Table: `procedures`
+**Drive fields — captured during Step 1 of the procedure**
 
 | Field | Type | Description |
 |---|---|---|
-| `procedure_id` | String (PK) | e.g. `hdd_purge_v1` |
-| `device_type` | String | Which device type this applies to |
-| `nist_method` | String | `clear`, `purge`, `destroy` |
-| `steps` | List | Ordered list of step objects (id, instruction, requires_confirmation) |
+| `drive_serial` | String | Drive serial number — read off the physical drive label |
+| `drive_manufacturer` | String | e.g. "Seagate", "Samsung", "WD" |
+| `drive_model` | String | e.g. "MZ-77E500" |
+| `drive_capacity_gb` | Number | e.g. 500 |
+| `drive_type` | String | `hdd` / `ssd` / `emmc` — confirms physical media type |
+| `wipe_tool_name` | String | Software used — e.g. "DBAN", "hdparm", "Eraser" |
+| `wipe_tool_version` | String | Version of the tool — required for certificate |
+| `wipe_result` | String | `pass` / `fail` — recorded after tool completes |
+
+**Completion fields — written when procedure finishes**
+
+| Field | Type | Description |
+|---|---|---|
+| `steps_completed` | List | `[{ step_id, timestamp, worker_id, notes, input_data }]` |
+| `completed_timestamp` | String (ISO 8601) | When all steps were confirmed |
+| `compliance_doc_url` | String | S3 pre-signed URL to generated PDF certificate |
+| `notes` | String | Free-text worker notes |
+
+### NIST SP 800-88 Appendix G — Certificate Fields Mapped to Data Model
+
+| Certificate Field (NIST) | Source in our system |
+|---|---|
+| Organization name | Hardcoded: "CityServe Arizona" |
+| Date of sanitization | `completed_timestamp` |
+| Tracking / item number | `device_id` |
+| Media manufacturer | `drive_manufacturer` |
+| Media model number | `drive_model` |
+| Media serial number | `drive_serial` |
+| Media type | `drive_type` |
+| Capacity | `drive_capacity_gb` |
+| Sanitization method | `procedure_id` → maps to NIST method string |
+| Tool used | `wipe_tool_name` + `wipe_tool_version` |
+| Verification result | `wipe_result` |
+| Technician name | `worker_id` → resolved to full name at PDF generation |
 
 ---
 
@@ -168,8 +245,14 @@ GET    /api/devices/{device_id}
 →     { full device record + steps_completed }
 
 PATCH  /api/devices/{device_id}/step
-body:  { "step_id": "...", "confirmed": true, "notes": "..." }
+body:  { "step_id": "...", "confirmed": true, "notes": "...", "input_data": { } }
 →     { "device_id": "...", "step_id": "...", "status": "in_progress" | "verified" }
+
+# input_data on Step 1 carries drive details, e.g.:
+# { "drive_serial": "...", "drive_manufacturer": "...",
+#   "drive_model": "...", "drive_capacity_gb": 500, "drive_type": "hdd" }
+# input_data on the wipe step carries tool info, e.g.:
+# { "wipe_tool_name": "DBAN", "wipe_tool_version": "2.3.0", "wipe_result": "pass" }
 
 POST   /api/devices/{device_id}/complete
 →     { "device_id": "...", "status": "documented", "compliance_doc_url": "..." }
