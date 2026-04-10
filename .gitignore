@@ -14,7 +14,7 @@ frontend/dist/
 *.tfstate
 *.tfstate.*
 terraform.tfvars
-
+.env
 # IDE
 .vscode/
 
