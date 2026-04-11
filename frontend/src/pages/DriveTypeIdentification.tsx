@@ -1,7 +1,14 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import { api } from "../api/client"
 import Layout from "../components/Layout"
+
+const BUILTIN_DEVICE_TYPES = new Set([
+  "laptop_ssd_nvme", "laptop_ssd_sata", "laptop_hdd",
+  "desktop_ssd", "desktop_hdd",
+  "tablet", "no_storage",
+  "drive_external_ssd", "drive_external_hdd",
+])
 
 // ── Drive type options per device category ────────────────────────────────────
 
@@ -144,10 +151,25 @@ export default function DriveTypeIdentification() {
 
   const { chassis_serial = "", make_model = "", os = "windows", device_category = "laptop" } = state
 
-  const driveOptions = DRIVE_OPTIONS[device_category] || DRIVE_OPTIONS["laptop"]
+  const driveOptions = DRIVE_OPTIONS[device_category] || []
   const [driveType, setDriveType] = useState(driveOptions[0]?.value || "")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [customProcedures, setCustomProcedures] = useState<{ value: string; label: string }[]>([])
+
+  useEffect(() => {
+    if (device_category !== "other") return
+    api.get("/api/procedures")
+      .then((res) => {
+        const all: { procedure_id: string; label: string; device_type: string }[] = res.data.procedures || []
+        const custom = all
+          .filter((p) => !BUILTIN_DEVICE_TYPES.has(p.device_type))
+          .map((p) => ({ value: p.device_type, label: p.label }))
+        setCustomProcedures(custom)
+        if (custom.length > 0) setDriveType(custom[0].value)
+      })
+      .catch(() => {})
+  }, [device_category])
 
   const biosSteps = getBiosSteps(os, device_category)
 
@@ -287,28 +309,62 @@ export default function DriveTypeIdentification() {
                 </div>
               )}
 
-              <div className="space-y-2 mb-6">
-                {driveOptions.map((opt) => (
-                  <label
-                    key={opt.value}
-                    className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${
-                      driveType === opt.value
-                        ? "bg-orange-600/10 border-orange-600 text-white"
-                        : "bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="drive_type"
-                      value={opt.value}
-                      checked={driveType === opt.value}
-                      onChange={() => setDriveType(opt.value)}
-                      className="accent-orange-600"
-                    />
-                    <span className="font-medium text-sm">{opt.label}</span>
-                  </label>
-                ))}
-              </div>
+              {device_category === "other" ? (
+                customProcedures.length === 0 ? (
+                  <div className="p-5 bg-slate-800/60 border border-slate-700 rounded-xl text-slate-400 text-sm mb-6">
+                    No custom procedures found. Ask an admin to create one under Admin → Create Procedure.
+                  </div>
+                ) : (
+                  <div className="space-y-2 mb-6">
+                    {customProcedures.map((opt) => (
+                      <label
+                        key={opt.value}
+                        className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${
+                          driveType === opt.value
+                            ? "bg-orange-600/10 border-orange-600 text-white"
+                            : "bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="drive_type"
+                          value={opt.value}
+                          checked={driveType === opt.value}
+                          onChange={() => setDriveType(opt.value)}
+                          className="accent-orange-600"
+                        />
+                        <div>
+                          <span className="font-medium text-sm block">{opt.label}</span>
+                          <span className="text-xs text-slate-500 font-mono">{opt.value}</span>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )
+              ) : (
+                <div className="space-y-2 mb-6">
+                  {driveOptions.map((opt) => (
+                    <label
+                      key={opt.value}
+                      className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${
+                        driveType === opt.value
+                          ? "bg-orange-600/10 border-orange-600 text-white"
+                          : "bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-500"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="drive_type"
+                        value={opt.value}
+                        checked={driveType === opt.value}
+                        onChange={() => setDriveType(opt.value)}
+                        className="accent-orange-600"
+                      />
+                      <span className="font-medium text-sm">{opt.label}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
 
               <div className="flex gap-4">
                 <button

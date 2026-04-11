@@ -14,6 +14,7 @@ const DEVICE_CATEGORIES = [
   { value: "desktop",   label: "Desktop" },
   { value: "tablet",    label: "Tablet / Mobile Device" },
   { value: "external",  label: "External Drive" },
+  { value: "other",     label: "Other / Custom Device" },
 ]
 
 export default function DeviceIntake() {

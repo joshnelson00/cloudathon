@@ -42,7 +42,7 @@ const DEVICE_LABELS: Record<string, string> = {
   no_storage:         "No Storage",
 }
 
-const TABS = ["Overview", "Devices", "Workers", "Create User"] as const
+const TABS = ["Overview", "Devices", "Workers", "Create User", "Create Procedure"] as const
 type Tab = typeof TABS[number]
 
 const EMPTY_FORM: UserFormData = {
@@ -137,6 +137,51 @@ export default function AdminDashboard() {
       setFormError(err.response?.data?.detail || "Failed to create user. Please try again.")
     } finally {
       setFormLoading(false)
+    }
+  }
+
+  // ── Create procedure state ───────────────────────────────────────────────
+  const NIST_METHODS = ["Purge", "Clear", "Destroy"]
+  const EMPTY_PROC = { label: "", device_type: "", nist_method: "Purge", nist_technique: "" }
+  const EMPTY_STEP = { instruction: "", requires_confirmation: true }
+
+  const [procForm, setProcForm] = useState(EMPTY_PROC)
+  const [procSteps, setProcSteps] = useState([{ ...EMPTY_STEP }])
+  const [procLoading, setProcLoading] = useState(false)
+  const [procError, setProcError] = useState("")
+  const [procSuccess, setProcSuccess] = useState("")
+
+  const handleProcFieldChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    // Sanitise device_type: lowercase, underscores only
+    const sanitised = name === "device_type" ? value.toLowerCase().replace(/[^a-z0-9_]/g, "_") : value
+    setProcForm((prev) => ({ ...prev, [name]: sanitised }))
+  }
+
+  const handleStepChange = (idx: number, field: "instruction" | "requires_confirmation", value: string | boolean) => {
+    setProcSteps((prev) => prev.map((s, i) => i === idx ? { ...s, [field]: value } : s))
+  }
+
+  const addStep = () => setProcSteps((prev) => [...prev, { ...EMPTY_STEP }])
+  const removeStep = (idx: number) => setProcSteps((prev) => prev.filter((_, i) => i !== idx))
+
+  const handleCreateProcedure = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setProcError("")
+    setProcSuccess("")
+    if (procSteps.length === 0) { setProcError("Add at least one step."); return }
+    if (procSteps.some((s) => !s.instruction.trim())) { setProcError("All steps must have an instruction."); return }
+    setProcLoading(true)
+    try {
+      const res = await api.post("/api/procedures", { ...procForm, steps: procSteps })
+      setProcSuccess(res.data.message || "Procedure created successfully.")
+      setProcForm(EMPTY_PROC)
+      setProcSteps([{ ...EMPTY_STEP }])
+      setTimeout(() => setProcSuccess(""), 5000)
+    } catch (err: any) {
+      setProcError(err.response?.data?.detail || "Failed to create procedure.")
+    } finally {
+      setProcLoading(false)
     }
   }
 
@@ -421,6 +466,137 @@ export default function AdminDashboard() {
                   {workerStats.length > 0 ? Math.round(total / workerStats.length) : 0}
                 </p>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── CREATE PROCEDURE TAB ─────────────────────────────────────── */}
+        {tab === "Create Procedure" && (
+          <div className="max-w-2xl">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-800 bg-slate-800/40">
+                <span className="text-sm font-bold text-white">Create Sanitization Procedure</span>
+                <p className="text-xs text-slate-400 mt-0.5">Define a new wipe procedure for a custom device type.</p>
+              </div>
+              <form onSubmit={handleCreateProcedure} className="p-6 space-y-6">
+                {procError && (
+                  <div className="p-4 bg-red-900/30 border border-red-700 rounded-lg text-red-300 text-sm">{procError}</div>
+                )}
+                {procSuccess && (
+                  <div className="p-4 bg-emerald-900/30 border border-emerald-700 rounded-lg text-emerald-300 text-sm flex items-center gap-2">
+                    <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                    {procSuccess}
+                  </div>
+                )}
+
+                {/* Procedure metadata */}
+                <div className="space-y-4">
+                  <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Procedure Details</h3>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">
+                      Procedure Label <span className="text-slate-600 normal-case font-normal">(shown to workers)</span>
+                    </label>
+                    <input
+                      type="text" name="label" value={procForm.label}
+                      onChange={handleProcFieldChange} placeholder="e.g. Android Phone — Factory Reset (NIST Clear)"
+                      required
+                      className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-slate-100 text-sm placeholder-slate-500 focus:ring-2 focus:ring-orange-600 outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">
+                      Device Type Key <span className="text-slate-600 normal-case font-normal">(unique slug, lowercase + underscores)</span>
+                    </label>
+                    <input
+                      type="text" name="device_type" value={procForm.device_type}
+                      onChange={handleProcFieldChange} placeholder="e.g. phone_android"
+                      pattern="[a-z0-9_]+" title="Lowercase letters, numbers, and underscores only"
+                      required
+                      className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-slate-100 text-sm font-mono placeholder-slate-500 focus:ring-2 focus:ring-orange-600 outline-none"
+                    />
+                    <p className="text-xs text-slate-600 mt-1">Workers will select this type at device intake.</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">NIST Method</label>
+                      <select
+                        name="nist_method" value={procForm.nist_method}
+                        onChange={handleProcFieldChange}
+                        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-slate-100 text-sm focus:ring-2 focus:ring-orange-600 outline-none"
+                      >
+                        {NIST_METHODS.map((m) => <option key={m} value={m}>{m}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">NIST Technique</label>
+                      <input
+                        type="text" name="nist_technique" value={procForm.nist_technique}
+                        onChange={handleProcFieldChange} placeholder="e.g. Overwrite, Block Erase"
+                        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-slate-100 text-sm placeholder-slate-500 focus:ring-2 focus:ring-orange-600 outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Steps */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                      Steps <span className="text-slate-600 font-normal">({procSteps.length})</span>
+                    </h3>
+                    <button
+                      type="button" onClick={addStep}
+                      className="flex items-center gap-1 text-xs font-bold text-orange-400 hover:text-orange-300 transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-base">add_circle</span>
+                      Add Step
+                    </button>
+                  </div>
+
+                  {procSteps.map((step, idx) => (
+                    <div key={idx} className="bg-slate-800/60 border border-slate-700 rounded-xl p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Step {idx + 1}</span>
+                        {procSteps.length > 1 && (
+                          <button
+                            type="button" onClick={() => removeStep(idx)}
+                            className="text-slate-600 hover:text-red-400 transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-base">delete</span>
+                          </button>
+                        )}
+                      </div>
+                      <textarea
+                        value={step.instruction}
+                        onChange={(e) => handleStepChange(idx, "instruction", e.target.value)}
+                        placeholder="Describe what the worker needs to do at this step…"
+                        rows={3} required
+                        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-slate-100 text-sm placeholder-slate-500 focus:ring-2 focus:ring-orange-600 outline-none resize-none"
+                      />
+                      <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                        <input
+                          type="checkbox"
+                          checked={step.requires_confirmation}
+                          onChange={(e) => handleStepChange(idx, "requires_confirmation", e.target.checked)}
+                          className="w-4 h-4 accent-orange-500"
+                        />
+                        <span className="text-xs text-slate-300">Requires worker confirmation before continuing</span>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  type="submit" disabled={procLoading}
+                  className="w-full bg-orange-600 hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-lg transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-lg">playlist_add_check</span>
+                  {procLoading ? "Creating..." : "Create Procedure"}
+                </button>
+              </form>
             </div>
           </div>
         )}
