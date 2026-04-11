@@ -84,6 +84,14 @@ def login(body: LoginRequest):
         token = create_token(user["username"], user["role"])
         return {"access_token": token, "token_type": "bearer"}
 
+    # Then check in-memory users created in this session
+    if body.username in DB_USERS:
+        db_user = DB_USERS[body.username]
+        if pwd_context.verify(body.password, db_user.get("password", "")):
+            roles = db_user.get("role", ["worker"])
+            token = create_token(db_user["username"], roles[0] if roles else "worker")
+            return {"access_token": token, "token_type": "bearer"}
+
     # Then check DynamoDB users table
     try:
         table = get_users_table()
@@ -99,7 +107,7 @@ def login(body: LoginRequest):
                 token = create_token(db_user["username"], roles[0] if roles else "worker")
                 return {"access_token": token, "token_type": "bearer"}
     except Exception:
-        # If DynamoDB is not available, only check hardcoded users
+        # If DynamoDB is not available, continue
         pass
 
     raise HTTPException(status_code=401, detail="Invalid username or password")
@@ -112,6 +120,18 @@ def logout():
 
 @router.get("/me")
 def me(user: dict = Depends(get_current_user)):
+    # Check in-memory users first
+    if user["username"] in DB_USERS:
+        db_user = DB_USERS[user["username"]]
+        return {
+            "user_id": db_user.get("user_id"),
+            "username": db_user.get("username"),
+            "fname": db_user.get("fname", ""),
+            "lname": db_user.get("lname", ""),
+            "email": db_user.get("email", ""),
+            "role": db_user.get("role", ["worker"]),
+        }
+
     try:
         # Try to get full user details from DynamoDB
         table = get_users_table()
@@ -137,6 +157,10 @@ def me(user: dict = Depends(get_current_user)):
     return {"username": user["username"], "role": user["role"]}
 
 
+# In-memory user storage (fallback when DynamoDB unavailable)
+DB_USERS: dict[str, dict] = {}
+
+
 @router.post("/users", response_model=UserCreateResponse)
 def create_user(
     body: UserCreateRequest,
@@ -146,11 +170,29 @@ def create_user(
     Create a new user (admin only).
 
     Adds user to DynamoDB users table with hashed password.
+    Falls back to in-memory storage if DynamoDB is unavailable.
     """
     # Validate username is not already in use
-    if body.username in USERS:
+    if body.username in USERS or body.username in DB_USERS:
         raise HTTPException(status_code=400, detail="Username already exists in system")
 
+    # Hash password and create user
+    user_id = str(uuid.uuid4())
+    hashed_password = pwd_context.hash(body.password)
+
+    item = {
+        "user_id": user_id,
+        "username": body.username,
+        "fname": body.fname,
+        "lname": body.lname,
+        "email": body.email,
+        "password": hashed_password,
+        "role": body.role,
+    }
+
+    stored_in_db = False
+
+    # Try to store in DynamoDB
     try:
         table = get_users_table()
 
@@ -163,32 +205,86 @@ def create_user(
         if response["Items"]:
             raise HTTPException(status_code=400, detail="Username already exists")
 
-        # Hash password and create user
-        user_id = str(uuid.uuid4())
-        hashed_password = pwd_context.hash(body.password)
-
-        item = {
-            "user_id": user_id,
-            "username": body.username,
-            "fname": body.fname,
-            "lname": body.lname,
-            "email": body.email,
-            "password": hashed_password,
-            "role": body.role,
-        }
-
         table.put_item(Item=item)
-
-        return UserCreateResponse(
-            user_id=user_id,
-            username=body.username,
-            fname=body.fname,
-            lname=body.lname,
-            email=body.email,
-            role=body.role,
-            message=f"User {body.username} created successfully",
-        )
+        stored_in_db = True
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to create user: {str(e)}")
+    except Exception:
+        # If DynamoDB is unavailable, store in memory
+        DB_USERS[body.username] = item
+
+    return UserCreateResponse(
+        user_id=user_id,
+        username=body.username,
+        fname=body.fname,
+        lname=body.lname,
+        email=body.email,
+        role=body.role,
+        message=f"User {body.username} created successfully" + (
+            " (stored in DynamoDB)" if stored_in_db else " (stored locally)"
+        ),
+    )
+
+
+@router.post("/signup", response_model=UserCreateResponse)
+def signup(body: UserCreateRequest):
+    """
+    Self-service user signup (no authentication required).
+
+    Creates new user with 'worker' role by default.
+    Adds user to DynamoDB users table with hashed password.
+    Falls back to in-memory storage if DynamoDB is unavailable.
+    """
+    # Validate username is not already in use
+    if body.username in USERS or body.username in DB_USERS:
+        raise HTTPException(status_code=400, detail="Username already exists in system")
+
+    # Hash password and create user
+    user_id = str(uuid.uuid4())
+    hashed_password = pwd_context.hash(body.password)
+
+    # Force worker role for self-signup (can't create admin accounts)
+    item = {
+        "user_id": user_id,
+        "username": body.username,
+        "fname": body.fname,
+        "lname": body.lname,
+        "email": body.email,
+        "password": hashed_password,
+        "role": ["worker"],  # Self-signup always creates worker accounts
+    }
+
+    stored_in_db = False
+
+    # Try to store in DynamoDB
+    try:
+        table = get_users_table()
+
+        # Check if username already exists in DynamoDB
+        response = table.scan(
+            FilterExpression="username = :username",
+            ExpressionAttributeValues={":username": body.username}
+        )
+
+        if response["Items"]:
+            raise HTTPException(status_code=400, detail="Username already exists")
+
+        table.put_item(Item=item)
+        stored_in_db = True
+    except HTTPException:
+        raise
+    except Exception:
+        # If DynamoDB is unavailable, store in memory
+        DB_USERS[body.username] = item
+
+    return UserCreateResponse(
+        user_id=user_id,
+        username=body.username,
+        fname=body.fname,
+        lname=body.lname,
+        email=body.email,
+        role=["worker"],
+        message=f"Account created successfully! You can now login." + (
+            " (stored in DynamoDB)" if stored_in_db else " (stored locally)"
+        ),
+    )
