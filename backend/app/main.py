@@ -5,6 +5,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
+from .auth import router as auth_router
 from .routers.analytics import router as analytics_router
 from .routers.devices import router as devices_router
 from .routers.compliance import router as compliance_router
@@ -49,6 +50,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_router,       prefix="/auth",  tags=["auth"])
 app.include_router(devices_router,    prefix="/api",   tags=["devices"])
 app.include_router(compliance_router, prefix="/api",   tags=["compliance"])
 app.include_router(analytics_router,  prefix="/api",   tags=["analytics"])
