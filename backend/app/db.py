@@ -24,5 +24,9 @@ def get_procedures_table():
     return _dynamodb().Table(settings.dynamodb_procedures_table)
 
 
+def get_users_table():
+    return _dynamodb().Table(settings.dynamodb_users_table)
+
+
 def get_s3():
     return _s3()

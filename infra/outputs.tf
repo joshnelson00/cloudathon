@@ -32,6 +32,14 @@ output "dynamodb_procedures_table_name" {
   value = aws_dynamodb_table.procedures.name
 }
 
+output "dynamodb_users_table_name" {
+  value = aws_dynamodb_table.users.name
+}
+
+output "compliance_bucket_name" {
+  value = aws_s3_bucket.compliance_docs.bucket
+}
+
 output "lambda_compliance_function_name" {
   value = aws_lambda_function.compliance_doc_generator.function_name
 }

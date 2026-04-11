@@ -43,6 +43,16 @@ variable "dynamodb_procedures_table_name" {
   default = ""
 }
 
+variable "dynamodb_users_table_name" {
+  type    = string
+  default = ""
+}
+
+variable "compliance_bucket_name" {
+  type    = string
+  default = ""
+}
+
 variable "lambda_compliance_function_name" {
   type    = string
   default = ""
