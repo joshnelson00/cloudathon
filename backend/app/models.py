@@ -5,9 +5,9 @@ from pydantic import BaseModel
 # ── Device intake ──────────────────────────────────────────────────────────────
 
 class DeviceIntakeRequest(BaseModel):
-    serial_number: str
-    device_type: str   # laptop_hdd | laptop_ssd | tablet | drive_external | no_storage
-    make_model: str
+    chassis_serial: str
+    device_type: str   # laptop_hdd | laptop_ssd | tablet | drive_external | drive_external_ssd | no_storage
+    chassis_make_model: str
 
 
 class DeviceIntakeResponse(BaseModel):
@@ -41,9 +41,9 @@ class StepLog(BaseModel):
 
 class DeviceDetail(BaseModel):
     device_id: str
-    serial_number: str
+    chassis_serial: str
     device_type: str
-    make_model: str
+    chassis_make_model: str
     intake_timestamp: str
     worker_id: str
     status: str

@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+from pydantic import BaseModel
 
 from .config import get_settings
 
@@ -12,6 +13,11 @@ settings = get_settings()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 router = APIRouter()
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
 
 # Hardcoded users for the hackathon — no user DB needed
 USERS: dict[str, dict] = {
@@ -57,9 +63,9 @@ def require_admin(user: dict = Depends(get_current_user)) -> dict:
 
 
 @router.post("/login")
-def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    user = USERS.get(form_data.username)
-    if not user or not pwd_context.verify(form_data.password, user["hashed_password"]):
+def login(body: LoginRequest):
+    user = USERS.get(body.username)
+    if not user or not pwd_context.verify(body.password, user["hashed_password"]):
         raise HTTPException(status_code=401, detail="Invalid username or password")
     token = create_token(user["username"], user["role"])
     return {"access_token": token, "token_type": "bearer"}
