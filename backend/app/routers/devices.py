@@ -70,8 +70,6 @@ def intake_device(body: DeviceIntakeRequest):
         "status":           "intake",
         "procedure_id":     procedure_id,
         "steps_completed":  [],
-        "comp_doc":         None,
-        "wipe_result":      None,
     }
 
     get_devices_table().put_item(Item=item)
@@ -311,6 +309,79 @@ def get_procedure(procedure_id: str):
     return item
 
 
+@router.put("/procedures/{procedure_id}", response_model=ProcedureCreateResponse)
+def update_procedure(
+    procedure_id: str,
+    body: ProcedureCreateRequest,
+):
+    table = get_procedures_table()
+    result = table.get_item(Key={"procedure_id": procedure_id})
+    item = result.get("Item")
+    if not item:
+        raise HTTPException(status_code=404, detail="Procedure not found")
+
+    # Check if device_type is being changed and if it already exists elsewhere
+    existing = table.scan().get("Items", [])
+    if body.device_type != item.get("device_type"):
+        for other in existing:
+            if other.get("device_type") == body.device_type and other.get("procedure_id") != procedure_id:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"A procedure for device type '{body.device_type}' already exists.",
+                )
+
+    prefix = body.device_type[:6].replace("_", "")
+    steps = [
+        {
+            "id": f"{prefix}_{i + 1}",
+            "instruction": step.instruction,
+            "requires_confirmation": step.requires_confirmation,
+            "input_fields": None,
+        }
+        for i, step in enumerate(body.steps)
+    ]
+
+    updated_item = {
+        "procedure_id": procedure_id,
+        "device_type": body.device_type,
+        "nist_method": body.nist_method,
+        "nist_technique": body.nist_technique,
+        "label": body.label,
+        "steps": steps,
+    }
+
+    table.put_item(Item=updated_item)
+
+    return ProcedureCreateResponse(
+        procedure_id=procedure_id,
+        device_type=body.device_type,
+        label=body.label,
+        message=f"Procedure '{body.label}' updated successfully.",
+    )
+
+
+@router.delete("/procedures/{procedure_id}")
+def delete_procedure(procedure_id: str):
+    table = get_procedures_table()
+    result = table.get_item(Key={"procedure_id": procedure_id})
+    item = result.get("Item")
+    if not item:
+        raise HTTPException(status_code=404, detail="Procedure not found")
+
+    # Check if any devices are using this procedure
+    devices_table = get_devices_table()
+    devices = devices_table.scan().get("Items", [])
+    in_use = [d for d in devices if d.get("procedure_id") == procedure_id]
+    if in_use:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot delete procedure '{procedure_id}' — {len(in_use)} device(s) are using it.",
+        )
+
+    table.delete_item(Key={"procedure_id": procedure_id})
+    return {"message": f"Procedure '{procedure_id}' deleted successfully."}
+
+
 def _get_full_user(username: str) -> dict:
     """Look up full user details from mock_users.json or fall back to username only."""
     path = os.path.join(os.path.dirname(__file__), "..", "..", "mock_users.json")
@@ -369,7 +440,11 @@ def complete_device(
     }
 
     from ..pdf import generate_compliance_pdf
-    generate_compliance_pdf(cert_item)
+    import logging as _log
+    try:
+        generate_compliance_pdf(cert_item)
+    except Exception as e:
+        _log.getLogger("cityserve").warning("PDF generation failed: %s — device will still be marked documented", e)
     stable_doc_path = f"/api/compliance/{device_id}/download"
 
     table.update_item(

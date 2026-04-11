@@ -16,17 +16,29 @@ export default function ComplianceRecord() {
   const [data, setData] = useState<ComplianceData | null>(null)
   const [loading, setLoading] = useState(true)
   const [downloading, setDownloading] = useState(false)
+  const [fetchError, setFetchError] = useState("")
+
+  const launchConfettiOnce = (deviceId: string) => {
+    const key = `compliance-confetti-shown:${deviceId}`
+    if (localStorage.getItem(key) === "1") return
+
+    confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors: ["#ea580c", "#10b981", "#ffffff"] })
+    setTimeout(() => confetti({ particleCount: 60, spread: 120, origin: { y: 0.5, x: 0.2 }, colors: ["#ea580c", "#f97316"] }), 300)
+    setTimeout(() => confetti({ particleCount: 60, spread: 120, origin: { y: 0.5, x: 0.8 }, colors: ["#10b981", "#34d399"] }), 500)
+
+    localStorage.setItem(key, "1")
+  }
 
   useEffect(() => {
     if (!id) return
     api.get(`/api/compliance/${id}`)
       .then((res) => {
         setData(res.data)
-        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors: ["#ea580c", "#10b981", "#ffffff"] })
-        setTimeout(() => confetti({ particleCount: 60, spread: 120, origin: { y: 0.5, x: 0.2 }, colors: ["#ea580c", "#f97316"] }), 300)
-        setTimeout(() => confetti({ particleCount: 60, spread: 120, origin: { y: 0.5, x: 0.8 }, colors: ["#10b981", "#34d399"] }), 500)
+        launchConfettiOnce(res.data.device_id || id)
       })
-      .catch(() => {})
+      .catch((err) => {
+        setFetchError(err?.response?.data?.detail || err?.message || "Could not load compliance record")
+      })
       .finally(() => setLoading(false))
   }, [id])
 
@@ -51,11 +63,21 @@ export default function ComplianceRecord() {
   if (!data) {
     return (
       <Layout>
-        <div className="text-center py-12">
-          <p className="text-red-400 mb-4">Compliance record not found</p>
-          <button onClick={() => navigate("/")} className="text-orange-500 hover:underline font-bold">
-            Return to Dashboard
-          </button>
+        <div className="text-center py-12 max-w-md mx-auto">
+          <span className="material-symbols-outlined text-5xl text-red-400 mb-4 block">description</span>
+          <p className="text-red-400 font-bold mb-2">Compliance record not found</p>
+          {fetchError && <p className="text-slate-400 text-sm mb-6">{fetchError}</p>}
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={() => window.location.reload()}
+              className="px-5 py-2 bg-orange-600 text-white rounded-lg font-bold hover:bg-orange-700"
+            >
+              Retry
+            </button>
+            <button onClick={() => navigate("/")} className="px-5 py-2 bg-slate-800 text-slate-300 rounded-lg font-bold hover:bg-slate-700">
+              Return to Dashboard
+            </button>
+          </div>
         </div>
       </Layout>
     )

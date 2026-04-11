@@ -42,7 +42,7 @@ const DEVICE_LABELS: Record<string, string> = {
   no_storage:         "No Storage",
 }
 
-const TABS = ["Overview", "Devices", "Workers", "Create User", "Create Procedure"] as const
+const TABS = ["Overview", "Devices", "Workers", "Create User", "Create Procedure", "Manage Procedures"] as const
 type Tab = typeof TABS[number]
 
 const EMPTY_FORM: UserFormData = {
@@ -151,6 +151,16 @@ export default function AdminDashboard() {
   const [procError, setProcError] = useState("")
   const [procSuccess, setProcSuccess] = useState("")
 
+  // Manage procedures state
+  const [procedures, setProcedures] = useState<any[]>([])
+  const [procListLoading, setProcListLoading] = useState(false)
+  const [editingProcId, setEditingProcId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState(EMPTY_PROC)
+  const [editSteps, setEditSteps] = useState([{ ...EMPTY_STEP }])
+  const [editLoading, setEditLoading] = useState(false)
+  const [editError, setEditError] = useState("")
+  const [editSuccess, setEditSuccess] = useState("")
+
   const handleProcFieldChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     // Sanitise device_type: lowercase, underscores only
@@ -178,12 +188,100 @@ export default function AdminDashboard() {
       setProcForm(EMPTY_PROC)
       setProcSteps([{ ...EMPTY_STEP }])
       setTimeout(() => setProcSuccess(""), 5000)
+      // Refresh procedures list
+      fetchProcedures()
     } catch (err: any) {
       setProcError(err.response?.data?.detail || "Failed to create procedure.")
     } finally {
       setProcLoading(false)
     }
   }
+
+  // ── Manage procedures functions ──────────────────────────────────────
+  const fetchProcedures = async () => {
+    setProcListLoading(true)
+    try {
+      const res = await api.get("/api/procedures")
+      setProcedures(res.data.procedures || [])
+    } catch (err: any) {
+      console.error("Failed to fetch procedures:", err)
+    } finally {
+      setProcListLoading(false)
+    }
+  }
+
+  const startEditingProcedure = (procedure: any) => {
+    setEditingProcId(procedure.procedure_id)
+    setEditForm({
+      label: procedure.label,
+      device_type: procedure.device_type,
+      nist_method: procedure.nist_method,
+      nist_technique: procedure.nist_technique || "",
+    })
+    setEditSteps(procedure.steps.map((s: any) => ({
+      instruction: s.instruction,
+      requires_confirmation: s.requires_confirmation,
+    })))
+    setEditError("")
+    setEditSuccess("")
+  }
+
+  const cancelEditingProcedure = () => {
+    setEditingProcId(null)
+    setEditForm(EMPTY_PROC)
+    setEditSteps([{ ...EMPTY_STEP }])
+    setEditError("")
+    setEditSuccess("")
+  }
+
+  const handleEditFieldChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    const sanitised = name === "device_type" ? value.toLowerCase().replace(/[^a-z0-9_]/g, "_") : value
+    setEditForm((prev) => ({ ...prev, [name]: sanitised }))
+  }
+
+  const handleEditStepChange = (idx: number, field: "instruction" | "requires_confirmation", value: string | boolean) => {
+    setEditSteps((prev) => prev.map((s, i) => i === idx ? { ...s, [field]: value } : s))
+  }
+
+  const handleUpdateProcedure = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingProcId) return
+    setEditError("")
+    setEditSuccess("")
+    if (editSteps.length === 0) { setEditError("Add at least one step."); return }
+    if (editSteps.some((s) => !s.instruction.trim())) { setEditError("All steps must have an instruction."); return }
+    setEditLoading(true)
+    try {
+      const res = await api.put(`/api/procedures/${editingProcId}`, { ...editForm, steps: editSteps })
+      setEditSuccess(res.data.message || "Procedure updated successfully.")
+      setTimeout(() => {
+        cancelEditingProcedure()
+        fetchProcedures()
+      }, 1500)
+    } catch (err: any) {
+      setEditError(err.response?.data?.detail || "Failed to update procedure.")
+    } finally {
+      setEditLoading(false)
+    }
+  }
+
+  const handleDeleteProcedure = async (procedure_id: string) => {
+    if (!confirm("Delete this procedure? Devices using it will no longer work.")) return
+    try {
+      await api.delete(`/api/procedures/${procedure_id}`)
+      fetchProcedures()
+    } catch (err: any) {
+      alert(err.response?.data?.detail || "Failed to delete procedure.")
+    }
+  }
+
+  // Fetch procedures when Manage Procedures tab is opened
+  useEffect(() => {
+    if (tab === "Manage Procedures") {
+      fetchProcedures()
+    }
+  }, [tab])
 
   // ── Shared tab button ────────────────────────────────────────────────────
   const TabBtn = ({ t }: { t: Tab }) => (
@@ -598,6 +696,195 @@ export default function AdminDashboard() {
                 </button>
               </form>
             </div>
+          </div>
+        )}
+
+        {/* ── MANAGE PROCEDURES TAB ────────────────────────────────────── */}
+        {tab === "Manage Procedures" && (
+          <div className="space-y-6">
+            {procListLoading ? (
+              <div className="p-10 text-center text-slate-400">Loading procedures...</div>
+            ) : procedures.length === 0 ? (
+              <div className="p-10 text-center text-slate-500">No procedures created yet.</div>
+            ) : (
+              procedures.map((proc) => (
+                <div key={proc.procedure_id} className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+                  {editingProcId === proc.procedure_id ? (
+                    <>
+                      <div className="px-6 py-4 border-b border-slate-800 bg-slate-800/40">
+                        <span className="text-sm font-bold text-white">Edit Procedure</span>
+                      </div>
+                      <form onSubmit={handleUpdateProcedure} className="p-6 space-y-6">
+                        {editError && (
+                          <div className="p-4 bg-red-900/30 border border-red-700 rounded-lg text-red-300 text-sm">{editError}</div>
+                        )}
+                        {editSuccess && (
+                          <div className="p-4 bg-emerald-900/30 border border-emerald-700 rounded-lg text-emerald-300 text-sm flex items-center gap-2">
+                            <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                            {editSuccess}
+                          </div>
+                        )}
+
+                        <div className="space-y-4">
+                          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">Procedure Details</h3>
+                          <div>
+                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">Procedure Label</label>
+                            <input
+                              type="text" name="label" value={editForm.label}
+                              onChange={handleEditFieldChange} placeholder="e.g. Android Phone — Factory Reset"
+                              required
+                              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-slate-100 text-sm placeholder-slate-500 focus:ring-2 focus:ring-orange-600 outline-none"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">Device Type Key</label>
+                            <input
+                              type="text" name="device_type" value={editForm.device_type}
+                              onChange={handleEditFieldChange} placeholder="e.g. phone_android"
+                              pattern="[a-z0-9_]+" title="Lowercase letters, numbers, and underscores only"
+                              required
+                              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-slate-100 text-sm font-mono placeholder-slate-500 focus:ring-2 focus:ring-orange-600 outline-none"
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">NIST Method</label>
+                              <select
+                                name="nist_method" value={editForm.nist_method}
+                                onChange={handleEditFieldChange}
+                                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-slate-100 text-sm focus:ring-2 focus:ring-orange-600 outline-none"
+                              >
+                                {["Purge", "Clear", "Destroy"].map((m) => <option key={m} value={m}>{m}</option>)}
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1.5">NIST Technique</label>
+                              <input
+                                type="text" name="nist_technique" value={editForm.nist_technique}
+                                onChange={handleEditFieldChange} placeholder="e.g. Overwrite"
+                                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-slate-100 text-sm placeholder-slate-500 focus:ring-2 focus:ring-orange-600 outline-none"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                              Steps <span className="text-slate-600 font-normal">({editSteps.length})</span>
+                            </h3>
+                            <button
+                              type="button" onClick={() => setEditSteps((prev) => [...prev, { ...EMPTY_STEP }])}
+                              className="flex items-center gap-1 text-xs font-bold text-orange-400 hover:text-orange-300 transition-colors"
+                            >
+                              <span className="material-symbols-outlined text-base">add_circle</span>
+                              Add Step
+                            </button>
+                          </div>
+
+                          {editSteps.map((step, idx) => (
+                            <div key={idx} className="bg-slate-800/60 border border-slate-700 rounded-xl p-4 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wide">Step {idx + 1}</span>
+                                {editSteps.length > 1 && (
+                                  <button
+                                    type="button" onClick={() => setEditSteps((prev) => prev.filter((_, i) => i !== idx))}
+                                    className="text-slate-600 hover:text-red-400 transition-colors"
+                                  >
+                                    <span className="material-symbols-outlined text-base">delete</span>
+                                  </button>
+                                )}
+                              </div>
+                              <textarea
+                                value={step.instruction}
+                                onChange={(e) => handleEditStepChange(idx, "instruction", e.target.value)}
+                                placeholder="Describe what the worker needs to do…"
+                                rows={3} required
+                                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-slate-100 text-sm placeholder-slate-500 focus:ring-2 focus:ring-orange-600 outline-none resize-none"
+                              />
+                              <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                                <input
+                                  type="checkbox"
+                                  checked={step.requires_confirmation}
+                                  onChange={(e) => handleEditStepChange(idx, "requires_confirmation", e.target.checked)}
+                                  className="w-4 h-4 accent-orange-500"
+                                />
+                                <span className="text-xs text-slate-300">Requires worker confirmation</span>
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="flex gap-3">
+                          <button
+                            type="submit" disabled={editLoading}
+                            className="flex-1 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white font-bold py-3 rounded-lg transition-all"
+                          >
+                            {editLoading ? "Updating..." : "Update Procedure"}
+                          </button>
+                          <button
+                            type="button" onClick={cancelEditingProcedure}
+                            className="flex-1 bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 rounded-lg transition-all"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    </>
+                  ) : (
+                    <>
+                      <div className="px-6 py-4 border-b border-slate-800 bg-slate-800/40">
+                        <h3 className="text-sm font-bold text-white">{proc.label}</h3>
+                        <p className="text-xs text-slate-400 mt-1 font-mono">{proc.procedure_id}</p>
+                      </div>
+                      <div className="p-6 space-y-4">
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <p className="text-xs text-slate-500 uppercase tracking-wide font-bold">Device Type</p>
+                            <p className="text-slate-300 font-mono mt-1">{proc.device_type}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-slate-500 uppercase tracking-wide font-bold">NIST Method</p>
+                            <p className="text-slate-300 mt-1">{proc.nist_method}</p>
+                          </div>
+                        </div>
+
+                        <div>
+                          <p className="text-xs text-slate-500 uppercase tracking-wide font-bold mb-2">Steps ({proc.steps.length})</p>
+                          <ol className="space-y-2 text-sm">
+                            {proc.steps.map((step: any, idx: number) => (
+                              <li key={idx} className="text-slate-300">
+                                <span className="font-bold text-orange-400">{idx + 1}.</span> {step.instruction}
+                                {step.requires_confirmation && <span className="text-xs text-amber-500 ml-2">✓ Confirmation</span>}
+                              </li>
+                            ))}
+                          </ol>
+                        </div>
+
+                        <div className="flex gap-3 pt-4 border-t border-slate-800">
+                          <button
+                            onClick={() => startEditingProcedure(proc)}
+                            className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg transition-all text-sm"
+                          >
+                            <span className="material-symbols-outlined text-base">edit</span>
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProcedure(proc.procedure_id)}
+                            className="flex-1 flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-2 rounded-lg transition-all text-sm"
+                          >
+                            <span className="material-symbols-outlined text-base">delete</span>
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))
+            )}
           </div>
         )}
 
