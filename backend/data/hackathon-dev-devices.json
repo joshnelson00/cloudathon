@@ -210,5 +210,99 @@
     "wipe_tool_version": "1.1.1",
     "completed_by": "unknown",
     "completed_at": "2026-04-11T14:47:04.561942+00:00"
+  },
+  "4b6d467f-ea8a-4d75-9dcd-e9476e40284c": {
+    "device_id": "4b6d467f-ea8a-4d75-9dcd-e9476e40284c",
+    "chassis_serial": "test123",
+    "device_type": "laptop_hdd",
+    "make_model": "12",
+    "intake_timestamp": "2026-04-11T14:53:20.189532+00:00",
+    "status": "documented",
+    "procedure_id": "hdd_purge_v1",
+    "steps_completed": [
+      {
+        "step_id": "hdd_1",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T14:53:20.960904+00:00"
+      },
+      {
+        "step_id": "hdd_2",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {
+          "drive_serial": "lkwngflnwrejf",
+          "drive_model": "kwnolkjenrg",
+          "drive_capacity_gb": "4",
+          "drive_manufacturer": "Dell"
+        },
+        "timestamp": "2026-04-11T14:53:33.479889+00:00"
+      },
+      {
+        "step_id": "hdd_3",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T14:53:36.510063+00:00"
+      },
+      {
+        "step_id": "hdd_4",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T14:53:37.902323+00:00"
+      },
+      {
+        "step_id": "hdd_5",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {
+          "wipe_tool_name": "122",
+          "wipe_tool_version": "12"
+        },
+        "timestamp": "2026-04-11T14:53:41.487491+00:00"
+      },
+      {
+        "step_id": "hdd_6",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T14:53:42.622715+00:00"
+      },
+      {
+        "step_id": "hdd_7",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {
+          "wipe_result": "fail"
+        },
+        "timestamp": "2026-04-11T14:53:53.837257+00:00"
+      },
+      {
+        "step_id": "hdd_8",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T14:53:56.510830+00:00"
+      },
+      {
+        "step_id": "hdd_9",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T14:53:57.554495+00:00"
+      }
+    ],
+    "comp_doc": "/api/compliance/4b6d467f-ea8a-4d75-9dcd-e9476e40284c/download",
+    "wipe_result": false,
+    "drive_serial": "lkwngflnwrejf",
+    "drive_model": "kwnolkjenrg",
+    "drive_capacity_gb": "4",
+    "drive_manufacturer": "Dell",
+    "wipe_tool_name": "122",
+    "wipe_tool_version": "12",
+    "completed_by": "unknown",
+    "completed_at": "2026-04-11T14:53:57.575908+00:00"
   }
 }
