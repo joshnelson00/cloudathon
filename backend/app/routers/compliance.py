@@ -16,7 +16,7 @@ def get_compliance(device_id: str):
     if not item:
         raise HTTPException(status_code=404, detail="Device not found")
 
-    url = item.get("compliance_doc_url")
+    url = item.get("comp_doc")
     if not url:
         raise HTTPException(
             status_code=404,
@@ -25,7 +25,7 @@ def get_compliance(device_id: str):
 
     return ComplianceResponse(
         device_id=device_id,
-        compliance_doc_url=url,
+        comp_doc=url,
         generated_at=item.get("intake_timestamp"),
     )
 
