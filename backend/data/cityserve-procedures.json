@@ -95,6 +95,12 @@
               "fail"
             ],
             "required": true
+          },
+          {
+            "name": "verification_method",
+            "label": "Verification Method (e.g., Tool completion log, Visual inspection)",
+            "type": "text",
+            "required": true
           }
         ]
       },
@@ -207,6 +213,12 @@
               "pass",
               "fail"
             ],
+            "required": true
+          },
+          {
+            "name": "verification_method",
+            "label": "Verification Method (e.g., Tool completion log, Visual inspection)",
+            "type": "text",
             "required": true
           }
         ]
@@ -321,6 +333,12 @@
               "fail"
             ],
             "required": true
+          },
+          {
+            "name": "verification_method",
+            "label": "Verification Method (e.g., Tool completion log, Visual inspection)",
+            "type": "text",
+            "required": true
           }
         ]
       },
@@ -408,6 +426,12 @@
               "pass",
               "fail"
             ],
+            "required": true
+          },
+          {
+            "name": "verification_method",
+            "label": "Verification Method (e.g., Tool completion log, Visual inspection)",
+            "type": "text",
             "required": true
           }
         ]
@@ -504,6 +528,12 @@
               "fail"
             ],
             "required": true
+          },
+          {
+            "name": "verification_method",
+            "label": "Verification Method (e.g., Tool completion log, Visual inspection)",
+            "type": "text",
+            "required": true
           }
         ]
       },
@@ -598,6 +628,12 @@
               "pass",
               "fail"
             ],
+            "required": true
+          },
+          {
+            "name": "verification_method",
+            "label": "Verification Method (e.g., Tool completion log, Visual inspection)",
+            "type": "text",
             "required": true
           }
         ]

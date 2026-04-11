@@ -93,6 +93,8 @@ PROCEDURES = [
                 "input_fields": [
                     {"name": "wipe_result", "label": "Wipe Result", "type": "select",
                      "options": ["pass", "fail"], "required": True},
+                    {"name": "verification_method", "label": "Verification Method (e.g., Tool completion log, Visual inspection)",
+                     "type": "text", "required": True},
                 ],
             },
             {
@@ -177,6 +179,8 @@ PROCEDURES = [
                 "input_fields": [
                     {"name": "wipe_result", "label": "Erase Result", "type": "select",
                      "options": ["pass", "fail"], "required": True},
+                    {"name": "verification_method", "label": "Verification Method (e.g., Tool completion log, Visual inspection)",
+                     "type": "text", "required": True},
                 ],
             },
             {
@@ -262,6 +266,8 @@ PROCEDURES = [
                 "input_fields": [
                     {"name": "wipe_result", "label": "Format Result", "type": "select",
                      "options": ["pass", "fail"], "required": True},
+                    {"name": "verification_method", "label": "Verification Method (e.g., Tool completion log, Visual inspection)",
+                     "type": "text", "required": True},
                 ],
             },
             {
@@ -335,6 +341,8 @@ PROCEDURES = [
                 "input_fields": [
                     {"name": "wipe_result", "label": "Reset Result", "type": "select",
                      "options": ["pass", "fail"], "required": True},
+                    {"name": "verification_method", "label": "Verification Method (e.g., Visual inspection, Setup screen confirmed)",
+                     "type": "text", "required": True},
                 ],
             },
             {
@@ -397,6 +405,8 @@ PROCEDURES = [
                 "input_fields": [
                     {"name": "wipe_result", "label": "Wipe Result", "type": "select",
                      "options": ["pass", "fail"], "required": True},
+                    {"name": "verification_method", "label": "Verification Method (e.g., Tool completion log, Visual inspection)",
+                     "type": "text", "required": True},
                 ],
             },
             {
@@ -460,6 +470,8 @@ PROCEDURES = [
                 "input_fields": [
                     {"name": "wipe_result", "label": "Erase Result", "type": "select",
                      "options": ["pass", "fail"], "required": True},
+                    {"name": "verification_method", "label": "Verification Method (e.g., Tool completion log, Visual inspection)",
+                     "type": "text", "required": True},
                 ],
             },
             {

@@ -1,8 +1,11 @@
+import json
+import os
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from ..auth import get_optional_user
 from ..db import get_devices_table, get_procedures_table
 from ..models import (
     DeviceCompleteResponse,
@@ -188,6 +191,7 @@ def complete_step(
     CERT_FIELDS = {
         "drive_serial", "drive_manufacturer", "drive_model",
         "drive_capacity_gb", "wipe_tool_name", "wipe_tool_version",
+        "verification_method",
     }
     extra_attrs = {k: v for k, v in body.input_data.items() if k in CERT_FIELDS}
 
@@ -228,24 +232,64 @@ def get_procedure(procedure_id: str):
     return item
 
 
+def _get_full_user(username: str) -> dict:
+    """Look up full user details from mock_users.json or fall back to username only."""
+    path = os.path.join(os.path.dirname(__file__), "..", "..", "mock_users.json")
+    try:
+        with open(path) as f:
+            data = json.load(f)
+        for u in data.get("users", []):
+            if u["username"] == username:
+                return u
+    except Exception:
+        pass
+    return {"username": username, "fname": username, "lname": "", "email": "", "role": "worker"}
+
+
 @router.post("/devices/{device_id}/complete", response_model=DeviceCompleteResponse)
-def complete_device(device_id: str):
+def complete_device(
+    device_id: str,
+    current_user: dict = Depends(get_optional_user),
+):
     table = get_devices_table()
     result = table.get_item(Key={"device_id": device_id})
     item = result.get("Item")
     if not item:
         raise HTTPException(status_code=404, detail="Device not found")
 
+    # Fetch procedure for NIST method/technique labels
+    proc_result = get_procedures_table().get_item(Key={"procedure_id": item["procedure_id"]})
+    procedure = proc_result.get("Item", {})
+
+    # Get full technician details (current_user is None if no token provided)
+    user_info = _get_full_user(current_user["username"]) if current_user else {}
+    now = datetime.now(timezone.utc).isoformat()
+
+    # Build enriched device dict for PDF (not persisted — just for generation)
+    cert_item = {
+        **item,
+        "nist_method":       procedure.get("nist_method", ""),
+        "nist_technique":    procedure.get("nist_technique", ""),
+        "procedure_label":   procedure.get("label", item["procedure_id"]),
+        "tech_name":         f"{user_info.get('fname', '')} {user_info.get('lname', '')}".strip(),
+        "tech_role":         user_info.get("role", "worker").title(),
+        "tech_email":        user_info.get("email", ""),
+        "tech_username":     user_info.get("username", ""),
+        "completed_at":      now,
+    }
+
     from ..pdf import generate_compliance_pdf
-    pdf_url = generate_compliance_pdf(item)
+    pdf_url = generate_compliance_pdf(cert_item)
 
     table.update_item(
         Key={"device_id": device_id},
-        UpdateExpression="SET #st = :status, comp_doc = :url",
+        UpdateExpression="SET #st = :status, comp_doc = :url, completed_by = :who, completed_at = :when",
         ExpressionAttributeNames={"#st": "status"},
         ExpressionAttributeValues={
             ":status": "documented",
             ":url":    pdf_url,
+            ":who":    cert_item["tech_name"] or (current_user or {}).get("username", "unknown"),
+            ":when":   now,
         },
     )
 
