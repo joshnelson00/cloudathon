@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
+import { FiShield, FiAlertTriangle, FiFileText, FiCheck, FiWifi, FiLoader, FiCheckCircle } from "react-icons/fi"
 import { api } from "../api/client"
 import Layout from "../components/Layout"
 

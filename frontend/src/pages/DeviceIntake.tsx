@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { FiAlertCircle, FiArrowRight, FiCpu } from "react-icons/fi"
 import { api } from "../api/client"
 import Layout from "../components/Layout"
 
