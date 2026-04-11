@@ -265,17 +265,28 @@ def complete_device(
     user_info = _get_full_user(current_user["username"]) if current_user else {}
     now = datetime.now(timezone.utc).isoformat()
 
+    VERIFICATION_METHODS = {
+        "hdd_purge_v1":            "Visual inspection + reboot verification (no OS detected)",
+        "sata_ssd_secure_erase_v1": "Tool completion report + reboot verification",
+        "nvme_ssd_format_v1":      "Tool completion report + reboot verification",
+        "tablet_factory_reset_v1": "Boot to setup wizard confirmation",
+        "external_hdd_purge_v1":   "Visual inspection + reboot verification (no OS detected)",
+        "external_ssd_purge_v1":   "Tool completion report + reboot verification",
+        "no_storage_clear_v1":     "Power cycle + visual inspection",
+    }
+
     # Build enriched device dict for PDF (not persisted — just for generation)
     cert_item = {
         **item,
-        "nist_method":       procedure.get("nist_method", ""),
-        "nist_technique":    procedure.get("nist_technique", ""),
-        "procedure_label":   procedure.get("label", item["procedure_id"]),
-        "tech_name":         f"{user_info.get('fname', '')} {user_info.get('lname', '')}".strip(),
-        "tech_role":         user_info.get("role", "worker").title(),
-        "tech_email":        user_info.get("email", ""),
-        "tech_username":     user_info.get("username", ""),
-        "completed_at":      now,
+        "nist_method":          procedure.get("nist_method", ""),
+        "nist_technique":       procedure.get("nist_technique", ""),
+        "procedure_label":      procedure.get("label", item["procedure_id"]),
+        "verification_method":  VERIFICATION_METHODS.get(item["procedure_id"], "Visual inspection"),
+        "tech_name":            f"{user_info.get('fname', '')} {user_info.get('lname', '')}".strip(),
+        "tech_role":            user_info.get("role", "worker").title(),
+        "tech_email":           user_info.get("email", ""),
+        "tech_username":        user_info.get("username", ""),
+        "completed_at":         now,
     }
 
     from ..pdf import generate_compliance_pdf

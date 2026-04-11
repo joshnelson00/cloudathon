@@ -106,6 +106,7 @@ class DashboardResponse(BaseModel):
     in_progress: int
     verified: int
     documented: int
+    completed: int = 0
     by_type: dict[str, int]
 
 
