@@ -178,7 +178,7 @@ jobs:
               "tar -xzf backend.tgz -C backend",
               "jwt=\"\$(printf '%s' '${jwt_b64}' | base64 -d)\"",
               "printf 'ENVIRONMENT=production\\nPORT=8000\\nALLOWED_ORIGINS=*\\nSERVICE_ENDPOINTS_JSON={\"analytics\":\"\",\"notifications\":\"\",\"payments\":\"\"}\\nUSE_MOCK_DB=false\\n' > backend/.env",
-              "printf 'JWT_SECRET_KEY=%s\\n' \"\$existing_jwt\" >> backend/.env",
+              "printf 'JWT_SECRET_KEY=%s\\n' \"\$jwt\" >> backend/.env",
               "printf 'LAMBDA_COMPLIANCE_FUNCTION_NAME=${lambda_fn}\\n' >> backend/.env",
               "printf 'S3_COMPLIANCE_BUCKET=${compliance_bucket}\\n' >> backend/.env",
               "python3 -m venv /opt/hackathon/venv",
