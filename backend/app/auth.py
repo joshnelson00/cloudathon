@@ -63,29 +63,20 @@ def create_token(username: str, role: str) -> str:
 
 
 def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
-    try:
-        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=["HS256"])
-        return {"username": payload["sub"], "role": payload["role"]}
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    # POC shortcut: auth checks are temporarily disabled for demo access.
+    return {"username": "poc_admin", "role": "admin"}
 
 
 _oauth2_optional = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
 
 def get_optional_user(token: str = Depends(_oauth2_optional)) -> dict | None:
     """Like get_current_user but returns None instead of 401 when no/invalid token."""
-    if not token:
-        return None
-    try:
-        payload = jwt.decode(token, settings.jwt_secret_key, algorithms=["HS256"])
-        return {"username": payload["sub"], "role": payload["role"]}
-    except JWTError:
-        return None
+    # POC shortcut: auth checks are temporarily disabled for demo access.
+    return {"username": "poc_admin", "role": "admin"}
 
 
 def require_admin(user: dict = Depends(get_current_user)) -> dict:
-    if user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Admin access required")
+    # POC shortcut: auth checks are temporarily disabled for demo access.
     return user
 
 
