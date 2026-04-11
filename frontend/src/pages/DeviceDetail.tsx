@@ -3,10 +3,22 @@ import { useParams, useNavigate } from "react-router-dom"
 import { api } from "../api/client"
 import Layout from "../components/Layout"
 
+interface InputField {
+  name: string
+  label: string
+  type: "text" | "number" | "select"
+  options?: string[]
+  required: boolean
+}
+
+type WipeSimPhase = "idle" | "connecting" | "reading" | "complete"
+
 interface Step {
   id: string
   instruction: string
   requires_confirmation: boolean
+  input_fields: InputField[] | null
+  wipe_api_sim?: boolean
 }
 
 interface CompletedStep {
@@ -34,6 +46,8 @@ export default function DeviceDetail() {
   const [loading, setLoading] = useState(true)
   const [completing, setCompleting] = useState(false)
   const [error, setError] = useState("")
+  const [stepInputs, setStepInputs] = useState<Record<string, Record<string, string>>>({})
+  const [wipeSimPhase, setWipeSimPhase] = useState<WipeSimPhase>("idle")
 
   useEffect(() => { loadDevice() }, [id])
 
@@ -55,14 +69,52 @@ export default function DeviceDetail() {
     }
   }
 
-  const handleStepComplete = async (stepId: string) => {
+  const handleInputChange = (stepId: string, fieldName: string, value: string) => {
+    setStepInputs((prev) => ({
+      ...prev,
+      [stepId]: { ...(prev[stepId] || {}), [fieldName]: value },
+    }))
+  }
+
+  const handleStepComplete = async (step: Step) => {
     if (!id || !device) return
-    try {
-      await api.patch(`/api/devices/${id}/step`, { step_id: stepId, confirmed: true, input_data: {} })
-      loadDevice()
-    } catch {
-      setError("Failed to complete step. Please try again.")
+
+    // Validate required input fields
+    if (step.input_fields) {
+      for (const field of step.input_fields) {
+        if (field.required && !stepInputs[step.id]?.[field.name]?.trim()) {
+          setError(`Please fill in "${field.label}" before confirming.`)
+          return
+        }
+      }
     }
+    setError("")
+
+    try {
+      await api.patch(`/api/devices/${id}/step`, {
+        step_id: step.id,
+        confirmed: true,
+        notes: "",
+        input_data: stepInputs[step.id] || {},
+      })
+      await loadDevice()
+    } catch {
+      setError("Failed to confirm step. Please try again.")
+    }
+  }
+
+  const startWipeSim = (step: Step) => {
+    setWipeSimPhase("connecting")
+    setTimeout(() => {
+      setWipeSimPhase("reading")
+      setTimeout(() => {
+        setWipeSimPhase("complete")
+        setTimeout(() => {
+          handleStepComplete({ ...step, input_fields: null, wipe_api_sim: false })
+          setWipeSimPhase("idle")
+        }, 1500)
+      }, 2000)
+    }, 2000)
   }
 
   const handleComplete = async () => {
@@ -98,7 +150,7 @@ export default function DeviceDetail() {
     <Layout>
       <div className="max-w-5xl mx-auto">
         {/* Header */}
-        <div className="px-0 py-6 mb-6 border-b border-slate-800">
+        <div className="py-6 mb-6 border-b border-slate-800">
           <div className="flex justify-between items-end">
             <div>
               <h1 className="text-3xl font-extrabold text-white tracking-tight" style={{ fontFamily: "Manrope, sans-serif" }}>
@@ -122,7 +174,7 @@ export default function DeviceDetail() {
         </div>
 
         {/* Progress Bar */}
-        <div className="bg-slate-900/80 backdrop-blur-md px-0 py-4 mb-8 rounded-lg border border-slate-800 px-6">
+        <div className="py-4 mb-8 rounded-lg border border-slate-800 bg-slate-900/80 px-6">
           <div className="flex justify-between items-center mb-2">
             <span className="text-xs font-bold text-slate-400 uppercase">Current Progress</span>
             <span className="text-xs font-bold text-orange-500">{progress}% Complete</span>
@@ -147,11 +199,11 @@ export default function DeviceDetail() {
 
             return (
               <div key={step.id} className="relative flex gap-6">
-                {/* Timeline */}
+                {/* Timeline dot */}
                 <div className="flex flex-col items-center">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                     isCompleted
-                      ? "bg-green-900/50 text-green-400 ring-0"
+                      ? "bg-green-900/50 text-green-400"
                       : isCurrentStep
                       ? "bg-orange-600 text-white ring-4 ring-orange-500/20"
                       : "bg-slate-800 text-slate-500"
@@ -181,19 +233,82 @@ export default function DeviceDetail() {
                         </div>
                         <span className="material-symbols-outlined text-slate-600 text-4xl">storage</span>
                       </div>
-                      <button
-                        onClick={() => handleStepComplete(step.id)}
-                        className="w-full bg-orange-600 text-white font-bold py-4 rounded-xl hover:bg-orange-700 transition-all flex items-center justify-center gap-2 text-lg shadow-lg shadow-orange-600/20 active:scale-[0.98]"
-                      >
-                        Confirm Step
-                        <span className="material-symbols-outlined">arrow_forward</span>
-                      </button>
+
+                      {/* Input fields */}
+                      {step.input_fields && step.input_fields.length > 0 && (
+                        <div className="grid grid-cols-2 gap-4 mb-6">
+                          {step.input_fields.map((field) => (
+                            <div key={field.name}>
+                              <label className="text-xs font-bold text-slate-300 uppercase tracking-wide block mb-1">
+                                {field.label}{field.required && <span className="text-red-400 ml-1">*</span>}
+                              </label>
+                              {field.type === "select" ? (
+                                <select
+                                  value={stepInputs[step.id]?.[field.name] || ""}
+                                  onChange={(e) => handleInputChange(step.id, field.name, e.target.value)}
+                                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 text-sm focus:ring-2 focus:ring-orange-600 outline-none"
+                                >
+                                  <option value="">Select...</option>
+                                  {field.options?.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                                </select>
+                              ) : (
+                                <input
+                                  type={field.type}
+                                  value={stepInputs[step.id]?.[field.name] || ""}
+                                  onChange={(e) => handleInputChange(step.id, field.name, e.target.value)}
+                                  placeholder={field.label}
+                                  className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 text-sm focus:ring-2 focus:ring-orange-600 outline-none"
+                                />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Wipe simulation or confirm */}
+                      {step.wipe_api_sim ? (
+                        <div>
+                          {wipeSimPhase === "idle" && (
+                            <button
+                              onClick={() => startWipeSim(step)}
+                              className="w-full py-4 bg-orange-600 text-white rounded-xl font-bold hover:bg-orange-700 transition flex items-center justify-center gap-2"
+                            >
+                              <span className="material-symbols-outlined">wifi</span>
+                              Connect to Wiper API
+                            </button>
+                          )}
+                          {wipeSimPhase === "connecting" && (
+                            <div className="w-full py-4 bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center gap-3 text-slate-300">
+                              <span className="material-symbols-outlined animate-spin">sync</span>
+                              <span className="text-sm font-bold">Connecting to device wiper API...</span>
+                            </div>
+                          )}
+                          {wipeSimPhase === "reading" && (
+                            <div className="w-full py-4 bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center gap-3 text-slate-300">
+                              <span className="material-symbols-outlined animate-spin">sync</span>
+                              <span className="text-sm font-bold">Reading sanitization status...</span>
+                            </div>
+                          )}
+                          {wipeSimPhase === "complete" && (
+                            <div className="w-full py-4 bg-emerald-900/40 border border-emerald-700 rounded-xl flex items-center justify-center gap-3 text-emerald-400">
+                              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                              <span className="text-sm font-bold">Wipe confirmed — PASS</span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleStepComplete(step)}
+                          className="w-full bg-orange-600 text-white font-bold py-4 rounded-xl hover:bg-orange-700 transition-all flex items-center justify-center gap-2 text-lg shadow-lg shadow-orange-600/20 active:scale-[0.98]"
+                        >
+                          Confirm Step
+                          <span className="material-symbols-outlined">arrow_forward</span>
+                        </button>
+                      )}
                     </div>
                   ) : (
                     <div className={`p-5 rounded-xl border ${
-                      isCompleted
-                        ? "bg-green-950/30 border-green-800/50"
-                        : "bg-slate-900 border-slate-800"
+                      isCompleted ? "bg-green-950/30 border-green-800/50" : "bg-slate-900 border-slate-800"
                     }`}>
                       <h3 className={`text-lg font-bold ${isCompleted ? "text-slate-300" : "text-slate-500"}`} style={{ fontFamily: "Manrope, sans-serif" }}>
                         {step.instruction}
@@ -212,7 +327,7 @@ export default function DeviceDetail() {
           })}
         </div>
 
-        {/* Footer Action */}
+        {/* Footer */}
         <div className="mt-10 py-10 text-center border-t border-slate-800">
           <button
             onClick={handleComplete}

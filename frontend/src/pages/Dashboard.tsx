@@ -29,12 +29,18 @@ const STATUS_CONFIG: Record<string, { color: string; label: string; dot: string 
 }
 
 const DEVICE_ICON: Record<string, string> = {
-  laptop_hdd:     "laptop_mac",
-  laptop_ssd:     "laptop_mac",
-  tablet:         "tablet",
-  phone:          "smartphone",
-  drive_external: "hard_drive",
-  no_storage:     "devices",
+  laptop_hdd:         "laptop_mac",
+  laptop_ssd:         "laptop_mac",
+  laptop_ssd_sata:    "laptop_mac",
+  laptop_ssd_nvme:    "laptop_mac",
+  desktop_hdd:        "computer",
+  desktop_ssd:        "computer",
+  tablet:             "tablet",
+  phone:              "smartphone",
+  drive_external:     "hard_drive",
+  drive_external_hdd: "hard_drive",
+  drive_external_ssd: "hard_drive",
+  no_storage:         "devices",
 }
 
 export default function Dashboard() {
@@ -188,7 +194,6 @@ export default function Dashboard() {
 
         {/* Bottom Section */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Quick Action Card */}
           <div className="lg:col-span-3 bg-slate-950 border border-slate-800 rounded-lg p-8 relative overflow-hidden group">
             <div className="relative z-10">
               <h4 className="text-orange-500 font-bold uppercase tracking-widest text-xs mb-4">Quick Action</h4>
@@ -211,7 +216,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Compliance Distribution */}
           <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-lg p-6">
             <h3 className="font-bold text-white mb-5" style={{ fontFamily: "Manrope, sans-serif" }}>Compliance Distribution</h3>
             <div className="space-y-4">

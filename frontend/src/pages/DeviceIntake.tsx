@@ -4,11 +4,15 @@ import { api } from "../api/client"
 import Layout from "../components/Layout"
 
 const DEVICE_TYPES = [
-  { value: "laptop_hdd", label: "Laptop — HDD" },
-  { value: "laptop_ssd", label: "Laptop — SSD" },
-  { value: "tablet",     label: "Tablet" },
-  { value: "drive_external", label: "External Drive — HDD" },
-  { value: "no_storage", label: "No usable storage" },
+  { value: "laptop_hdd",         label: "Laptop — HDD (spinning disk)" },
+  { value: "laptop_ssd_sata",    label: "Laptop — SATA SSD" },
+  { value: "laptop_ssd_nvme",    label: "Laptop — NVMe SSD (M.2)" },
+  { value: "desktop_hdd",        label: "Desktop — HDD (spinning disk)" },
+  { value: "desktop_ssd",        label: "Desktop — SSD" },
+  { value: "tablet",             label: "Tablet / Mobile Device" },
+  { value: "drive_external_hdd", label: "External Drive — HDD" },
+  { value: "drive_external_ssd", label: "External Drive — SSD" },
+  { value: "no_storage",         label: "Device with No Storage" },
 ]
 
 export default function DeviceIntake() {
@@ -44,7 +48,6 @@ export default function DeviceIntake() {
   return (
     <Layout>
       <div className="max-w-6xl mx-auto">
-        {/* Page Header */}
         <div className="mb-10">
           <h1 className="text-3xl font-extrabold text-white tracking-tight mb-2">Intake New Device</h1>
           <p className="text-slate-400 max-w-2xl leading-relaxed">
@@ -63,7 +66,6 @@ export default function DeviceIntake() {
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Serial Number */}
                 <div className="col-span-2">
                   <label className="block text-sm font-semibold text-slate-300 mb-2">Chassis Serial Number</label>
                   <input
@@ -75,9 +77,9 @@ export default function DeviceIntake() {
                     required
                     className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-orange-600 focus:border-orange-600 outline-none transition-all"
                   />
+                  <p className="text-xs text-slate-500 mt-1">Serial number on the chassis label — the drive serial is recorded during the procedure.</p>
                 </div>
 
-                {/* Device Type */}
                 <div className="col-span-2">
                   <label className="block text-sm font-semibold text-slate-300 mb-2">Device Type</label>
                   <select
@@ -90,9 +92,9 @@ export default function DeviceIntake() {
                       <option key={t.value} value={t.value}>{t.label}</option>
                     ))}
                   </select>
+                  <p className="text-xs text-slate-500 mt-1">This determines the NIST procedure. If unsure whether a laptop has SATA or NVMe, check BIOS storage settings.</p>
                 </div>
 
-                {/* Make & Model */}
                 <div className="col-span-1">
                   <label className="block text-sm font-semibold text-slate-300 mb-2">Make &amp; Model</label>
                   <input
@@ -106,7 +108,6 @@ export default function DeviceIntake() {
                   />
                 </div>
 
-                {/* Worker ID (read-only) */}
                 <div className="col-span-1">
                   <label className="block text-sm font-semibold text-slate-500 mb-2">Worker ID</label>
                   <input

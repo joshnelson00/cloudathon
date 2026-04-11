@@ -52,6 +52,7 @@ class StepCompleteRequest(BaseModel):
     step_id: str
     confirmed: bool
     notes: Optional[str] = ""
+    input_data: dict = {}
 
 
 class StepCompleteResponse(BaseModel):
@@ -84,8 +85,9 @@ class DeviceDetail(BaseModel):
     intake_timestamp: str
     status: str
     procedure_id: str
+    steps_completed: list = []
     wipe_result: Optional[bool] = None
-    comp_doc: Optional[str] = None  # Link to compliance document in S3
+    comp_doc: Optional[str] = None
 
 
 # ── Complete device (trigger compliance document) ─────────────────────────────

@@ -78,7 +78,8 @@
         "id": "hdd_6",
         "instruction": "Run a single-pass overwrite on the drive. Do NOT interrupt the process. Per NIST SP 800-88r2 \u00a73.1.1, a single overwrite pass is sufficient.",
         "requires_confirmation": true,
-        "input_fields": null
+        "input_fields": null,
+        "wipe_api_sim": true
       },
       {
         "id": "hdd_7",
@@ -190,7 +191,8 @@
         "id": "ssd_6",
         "instruction": "Issue the ATA Secure Erase command.",
         "requires_confirmation": true,
-        "input_fields": null
+        "input_fields": null,
+        "wipe_api_sim": true
       },
       {
         "id": "ssd_7",
@@ -302,7 +304,8 @@
         "id": "nvme_6",
         "instruction": "Run: nvme format /dev/nvme0 --ses=1",
         "requires_confirmation": true,
-        "input_fields": null
+        "input_fields": null,
+        "wipe_api_sim": true
       },
       {
         "id": "nvme_7",
@@ -389,7 +392,8 @@
         "id": "tab_4",
         "instruction": "Confirm and wait for reset to complete.",
         "requires_confirmation": true,
-        "input_fields": null
+        "input_fields": null,
+        "wipe_api_sim": true
       },
       {
         "id": "tab_5",
@@ -483,7 +487,8 @@
         "id": "exthdd_4",
         "instruction": "Run single-pass overwrite.",
         "requires_confirmation": true,
-        "input_fields": null
+        "input_fields": null,
+        "wipe_api_sim": true
       },
       {
         "id": "exthdd_5",
@@ -577,7 +582,8 @@
         "id": "extssd_4",
         "instruction": "Run secure erase or overwrite.",
         "requires_confirmation": true,
-        "input_fields": null
+        "input_fields": null,
+        "wipe_api_sim": true
       },
       {
         "id": "extssd_5",

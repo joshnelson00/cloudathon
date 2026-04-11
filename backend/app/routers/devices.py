@@ -73,6 +73,26 @@ def list_devices():
     return {"devices": items}
 
 
+@router.get("/devices/search")
+def search_devices(q: str = ""):
+    """Search devices by type, serial, make/model, or status."""
+    result = get_devices_table().scan()
+    items = result.get("Items", [])
+
+    if q.strip():
+        q_lower = q.lower()
+        items = [
+            item for item in items
+            if (q_lower in item.get("device_type", "").lower() or
+                q_lower in item.get("chassis_serial", "").lower() or
+                q_lower in item.get("make_model", "").lower() or
+                q_lower in item.get("status", "").lower())
+        ]
+
+    items.sort(key=lambda x: x.get("intake_timestamp", ""), reverse=True)
+    return {"devices": items}
+
+
 @router.get("/devices/{device_id}", response_model=DeviceDetail)
 def get_device(device_id: str):
     result = get_devices_table().get_item(Key={"device_id": device_id})
@@ -88,6 +108,7 @@ def get_device(device_id: str):
         intake_timestamp=item["intake_timestamp"],
         status=item["status"],
         procedure_id=item["procedure_id"],
+        steps_completed=item.get("steps_completed", []),
         wipe_result=item.get("wipe_result"),
         comp_doc=item.get("comp_doc"),
     )
@@ -106,24 +127,43 @@ def complete_step(
 
     now = datetime.now(timezone.utc).isoformat()
     step_log = {
-        "step_id":   body.step_id,
-        "confirmed": body.confirmed,
-        "notes":     body.notes or "",
-        "timestamp": now,
+        "step_id":    body.step_id,
+        "confirmed":  body.confirmed,
+        "notes":      body.notes or "",
+        "input_data": body.input_data,
+        "timestamp":  now,
     }
 
     steps = list(item.get("steps_completed", []))
     steps = [s for s in steps if s["step_id"] != body.step_id]
     steps.append(step_log)
 
+    # Promote known certificate fields to top-level device record
+    CERT_FIELDS = {
+        "drive_serial", "drive_manufacturer", "drive_model",
+        "drive_capacity_gb", "wipe_tool_name", "wipe_tool_version",
+    }
+    extra_attrs = {k: v for k, v in body.input_data.items() if k in CERT_FIELDS}
+
+    update_expr = "SET steps_completed = :s, #st = :status"
+    attr_names  = {"#st": "status"}
+    attr_values = {":s": steps, ":status": "in_progress"}
+
+    for field, value in extra_attrs.items():
+        placeholder = f":{field}"
+        update_expr += f", {field} = {placeholder}"
+        attr_values[placeholder] = value
+
+    # wipe_result is a boolean — store separately
+    if "wipe_result" in body.input_data:
+        update_expr += ", wipe_result = :wr"
+        attr_values[":wr"] = body.input_data["wipe_result"] == "pass"
+
     table.update_item(
         Key={"device_id": device_id},
-        UpdateExpression="SET steps_completed = :s, #st = :status",
-        ExpressionAttributeNames={"#st": "status"},
-        ExpressionAttributeValues={
-            ":s":      steps,
-            ":status": "in_progress",
-        },
+        UpdateExpression=update_expr,
+        ExpressionAttributeNames=attr_names,
+        ExpressionAttributeValues=attr_values,
     )
 
     return StepCompleteResponse(
