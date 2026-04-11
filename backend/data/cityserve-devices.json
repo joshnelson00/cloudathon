@@ -1,0 +1,14 @@
+{
+  "b8eb6ee7-c46f-4ebe-81b5-0c5190704351": {
+    "device_id": "b8eb6ee7-c46f-4ebe-81b5-0c5190704351",
+    "chassis_serial": "ABC123",
+    "device_type": "laptop_ssd",
+    "make_model": "Dell XPS 13",
+    "intake_timestamp": "2026-04-11T02:37:53.645068+00:00",
+    "status": "intake",
+    "procedure_id": "sata_ssd_secure_erase_v1",
+    "steps_completed": [],
+    "comp_doc": null,
+    "wipe_result": null
+  }
+}
