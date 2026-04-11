@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta, timezone
+import json
+import os
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
@@ -20,24 +22,32 @@ class LoginRequest(BaseModel):
     username: str
     password: str
 
-# Hardcoded users for the hackathon — no user DB needed
-USERS: dict[str, dict] = {
-    "worker1": {
-        "username": "worker1",
-        "role": "worker",
-        "hashed_password": pwd_context.hash("password123"),
-    },
-    "worker2": {
-        "username": "worker2",
-        "role": "worker",
-        "hashed_password": pwd_context.hash("password123"),
-    },
-    "admin": {
-        "username": "admin",
-        "role": "admin",
-        "hashed_password": pwd_context.hash("admin123"),
-    },
-}
+def load_mock_users() -> dict[str, dict]:
+    """Load users from mock_users.json for local development."""
+    mock_users_path = os.path.join(os.path.dirname(__file__), "..", "mock_users.json")
+
+    if not os.path.exists(mock_users_path):
+        return {}
+
+    try:
+        with open(mock_users_path, "r") as f:
+            data = json.load(f)
+
+        users = {}
+        for user in data.get("users", []):
+            username = user["username"]
+            users[username] = {
+                "username": username,
+                "role": user.get("role", "worker"),
+                "hashed_password": pwd_context.hash(user["password"]),
+            }
+        return users
+    except (json.JSONDecodeError, IOError, KeyError):
+        return {}
+
+
+# Load users from mock_users.json for local development
+USERS = load_mock_users()
 
 
 def create_token(username: str, role: str) -> str:

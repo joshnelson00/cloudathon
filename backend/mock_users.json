@@ -1,0 +1,44 @@
+{
+  "users": [
+    {
+      "username": "alice_johnson",
+      "fname": "Alice",
+      "lname": "Johnson",
+      "email": "alice@cityserve.local",
+      "password": "Alice@2024!",
+      "role": "worker"
+    },
+    {
+      "username": "bob_smith",
+      "fname": "Bob",
+      "lname": "Smith",
+      "email": "bob@cityserve.local",
+      "password": "Bob@2024!",
+      "role": "worker"
+    },
+    {
+      "username": "carol_davis",
+      "fname": "Carol",
+      "lname": "Davis",
+      "email": "carol@cityserve.local",
+      "password": "Carol@2024!",
+      "role": "worker"
+    },
+    {
+      "username": "david_wilson",
+      "fname": "David",
+      "lname": "Wilson",
+      "email": "david@cityserve.local",
+      "password": "David@2024!",
+      "role": "worker"
+    },
+    {
+      "username": "emma_brown",
+      "fname": "Emma",
+      "lname": "Brown",
+      "email": "emma@cityserve.local",
+      "password": "Emma@2024!",
+      "role": "admin"
+    }
+  ]
+}
