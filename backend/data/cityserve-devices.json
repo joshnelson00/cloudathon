@@ -276,5 +276,101 @@
     "drive_capacity_gb": "256",
     "wipe_tool_name": "hdparm",
     "wipe_tool_version": "1.0"
+  },
+  "75d600c0-32b9-4319-a19e-c0b86238eeec": {
+    "device_id": "75d600c0-32b9-4319-a19e-c0b86238eeec",
+    "chassis_serial": "SNUM",
+    "device_type": "laptop_hdd",
+    "make_model": "Macbook AwesomeX",
+    "intake_timestamp": "2026-04-11T03:57:09.511923+00:00",
+    "status": "documented",
+    "procedure_id": "hdd_purge_v1",
+    "steps_completed": [
+      {
+        "step_id": "hdd_1",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T03:57:11.253850+00:00"
+      },
+      {
+        "step_id": "hdd_2",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {
+          "drive_serial": "08q74985",
+          "drive_model": "Microcenter",
+          "drive_manufacturer": "Apple",
+          "drive_capacity_gb": "256"
+        },
+        "timestamp": "2026-04-11T03:57:33.435737+00:00"
+      },
+      {
+        "step_id": "hdd_3",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T03:57:36.585218+00:00"
+      },
+      {
+        "step_id": "hdd_4",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T03:57:39.018247+00:00"
+      },
+      {
+        "step_id": "hdd_5",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {
+          "wipe_tool_name": "DataDeleter3000",
+          "wipe_tool_version": "1.2"
+        },
+        "timestamp": "2026-04-11T03:57:50.571536+00:00"
+      },
+      {
+        "step_id": "hdd_6",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T03:57:59.032080+00:00"
+      },
+      {
+        "step_id": "hdd_7",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {
+          "wipe_result": "pass",
+          "verification_method": "tool completion"
+        },
+        "timestamp": "2026-04-11T03:58:18.153192+00:00"
+      },
+      {
+        "step_id": "hdd_8",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T03:58:20.502312+00:00"
+      },
+      {
+        "step_id": "hdd_9",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T03:58:23.019084+00:00"
+      }
+    ],
+    "comp_doc": "/api/compliance/75d600c0-32b9-4319-a19e-c0b86238eeec/download",
+    "wipe_result": true,
+    "drive_serial": "08q74985",
+    "drive_model": "Microcenter",
+    "drive_manufacturer": "Apple",
+    "drive_capacity_gb": "256",
+    "wipe_tool_name": "DataDeleter3000",
+    "wipe_tool_version": "1.2",
+    "verification_method": "tool completion",
+    "completed_by": "unknown",
+    "completed_at": "2026-04-11T04:05:32.466289+00:00"
   }
 }
