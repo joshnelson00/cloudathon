@@ -404,5 +404,101 @@
     "verification_method": "tool completion",
     "completed_by": "unknown",
     "completed_at": "2026-04-11T04:05:32.466289+00:00"
+  },
+  "c59bb5af-70b4-45e7-897e-669136271e9b": {
+    "device_id": "c59bb5af-70b4-45e7-897e-669136271e9b",
+    "chassis_serial": "S3-push",
+    "device_type": "laptop_hdd",
+    "make_model": "model",
+    "intake_timestamp": "2026-04-11T04:44:58.033221+00:00",
+    "status": "documented",
+    "procedure_id": "hdd_purge_v1",
+    "steps_completed": [
+      {
+        "step_id": "hdd_1",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T04:44:59.063903+00:00"
+      },
+      {
+        "step_id": "hdd_2",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {
+          "drive_serial": "1234",
+          "drive_manufacturer": "apple",
+          "drive_model": "model",
+          "drive_capacity_gb": "256"
+        },
+        "timestamp": "2026-04-11T04:45:08.612346+00:00"
+      },
+      {
+        "step_id": "hdd_3",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T04:45:11.478175+00:00"
+      },
+      {
+        "step_id": "hdd_4",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T04:45:13.244936+00:00"
+      },
+      {
+        "step_id": "hdd_5",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {
+          "wipe_tool_name": "tool",
+          "wipe_tool_version": "1.4"
+        },
+        "timestamp": "2026-04-11T04:45:22.679375+00:00"
+      },
+      {
+        "step_id": "hdd_6",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T04:45:29.629477+00:00"
+      },
+      {
+        "step_id": "hdd_7",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {
+          "wipe_result": "pass",
+          "verification_method": "tool"
+        },
+        "timestamp": "2026-04-11T04:45:36.545590+00:00"
+      },
+      {
+        "step_id": "hdd_8",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T04:45:37.494914+00:00"
+      },
+      {
+        "step_id": "hdd_9",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T04:45:38.877781+00:00"
+      }
+    ],
+    "comp_doc": "/api/compliance/c59bb5af-70b4-45e7-897e-669136271e9b/download",
+    "wipe_result": true,
+    "drive_serial": "1234",
+    "drive_manufacturer": "apple",
+    "drive_model": "model",
+    "drive_capacity_gb": "256",
+    "wipe_tool_name": "tool",
+    "wipe_tool_version": "1.4",
+    "verification_method": "tool",
+    "completed_by": "unknown",
+    "completed_at": "2026-04-11T04:45:41.330926+00:00"
   }
 }
