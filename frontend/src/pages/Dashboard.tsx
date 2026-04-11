@@ -115,7 +115,7 @@ export default function Dashboard() {
             {userRole === "admin" && (
               <button
                 onClick={() => navigate("/admin/users")}
-                className="bg-purple-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-purple-700 transition flex items-center gap-2"
+                className="bg-gray-700 text-white px-6 py-3 rounded-lg font-bold hover:bg-gray-800 transition flex items-center gap-2"
               >
                 <FiUsers className="w-5 h-5" />
                 Manage Users
@@ -123,7 +123,7 @@ export default function Dashboard() {
             )}
             <button
               onClick={() => navigate("/intake")}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition flex items-center gap-2"
+              className="bg-gray-700 text-white px-6 py-3 rounded-lg font-bold hover:bg-gray-800 transition flex items-center gap-2"
             >
               <FiPlus className="w-5 h-5" />
               Intake New Device
@@ -138,14 +138,14 @@ export default function Dashboard() {
               <p className="text-xs font-bold uppercase text-gray-600 tracking-wide">
                 Total Devices
               </p>
-              <FiBarChart2 className="text-2xl text-blue-600" />
+              <FiBarChart2 className="text-2xl text-gray-700" />
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-4xl font-bold text-gray-900">
                 {stats.total}
               </span>
               {stats.total > 0 && (
-                <span className="text-green-600 font-bold text-sm">All Time</span>
+                <span className="text-gray-600 font-bold text-sm">All Time</span>
               )}
             </div>
           </div>
@@ -155,13 +155,13 @@ export default function Dashboard() {
               <p className="text-xs font-bold uppercase text-gray-600 tracking-wide">
                 In-Progress
               </p>
-              <FiZap className="text-2xl text-amber-600" />
+              <FiZap className="text-2xl text-gray-700" />
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-4xl font-bold text-gray-900">
                 {stats.in_progress}
               </span>
-              <span className="text-amber-600 font-bold text-sm">Active</span>
+              <span className="text-gray-600 font-bold text-sm">Active</span>
             </div>
             <div className="mt-4 flex gap-1 h-2 w-full bg-gray-200 rounded overflow-hidden">
               {Array.from({ length: 10 }).map((_, i) => (
@@ -169,7 +169,7 @@ export default function Dashboard() {
                   key={i}
                   className={
                     i < Math.ceil((stats.in_progress / stats.total) * 10)
-                      ? "flex-1 bg-blue-600"
+                      ? "flex-1 bg-gray-700"
                       : "flex-1 bg-gray-300"
                   }
                 />
@@ -182,13 +182,13 @@ export default function Dashboard() {
               <p className="text-xs font-bold uppercase text-gray-600 tracking-wide">
                 Completed
               </p>
-              <FiCheckCircle className="text-2xl text-green-600" />
+              <FiCheckCircle className="text-2xl text-gray-700" />
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-4xl font-bold text-gray-900">
                 {stats.documented}
               </span>
-              <span className="text-green-600 font-bold text-sm">
+              <span className="text-gray-600 font-bold text-sm">
                 {stats.total > 0
                   ? `${Math.round((stats.documented / stats.total) * 100)}%`
                   : "0%"}

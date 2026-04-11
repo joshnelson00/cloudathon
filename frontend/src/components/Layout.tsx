@@ -44,13 +44,13 @@ export default function Layout({ children, showNav = true }: LayoutProps) {
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center justify-between">
               {sidebarOpen && (
-                <h1 className="text-lg font-bold text-blue-600 truncate">
+                <h1 className="text-lg font-bold text-gray-900 truncate">
                   CityServe
                 </h1>
               )}
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition"
+                className="p-2 hover:bg-gray-100 rounded-lg transition text-gray-700"
               >
                 {sidebarOpen ? (
                   <FiX className="w-5 h-5" />
@@ -69,8 +69,8 @@ export default function Layout({ children, showNav = true }: LayoutProps) {
                 onClick={() => navigate(path)}
                 className={`w-full flex items-center gap-4 px-4 py-3 rounded-lg transition ${
                   isActive(path)
-                    ? "bg-blue-100 text-blue-600 font-medium"
-                    : "text-gray-600 hover:bg-gray-100"
+                    ? "bg-gray-200 text-gray-900 font-medium"
+                    : "text-gray-700 hover:bg-gray-100"
                 }`}
                 title={!sidebarOpen ? label : ""}
               >
@@ -84,7 +84,7 @@ export default function Layout({ children, showNav = true }: LayoutProps) {
           <div className="p-3 border-t border-gray-200">
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-4 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition font-medium"
+              className="w-full flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition font-medium"
               title="Logout"
             >
               <FiLogOut className="w-5 h-5 flex-shrink-0" />
