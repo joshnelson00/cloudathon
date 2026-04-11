@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Batch Records | CityServe Compliance</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-container": "#cadaff",
+                        "on-secondary-container": "#4e6874",
+                        "primary-container": "#265eae",
+                        "surface-tint": "#255dad",
+                        "on-tertiary-fixed": "#341100",
+                        "inverse-surface": "#2d3133",
+                        "inverse-primary": "#abc7ff",
+                        "surface-container-low": "#f2f4f6",
+                        "on-secondary-fixed-variant": "#304a55",
+                        "surface-variant": "#e0e3e5",
+                        "outline-variant": "#c2c6d4",
+                        "outline": "#727783",
+                        "primary-fixed": "#d7e2ff",
+                        "on-secondary": "#ffffff",
+                        "primary": "#004691",
+                        "primary-fixed-dim": "#abc7ff",
+                        "surface": "#f7f9fb",
+                        "surface-container-highest": "#e0e3e5",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed-dim": "#ffb691",
+                        "on-surface": "#191c1e",
+                        "surface-container-high": "#e6e8ea",
+                        "secondary-container": "#cbe7f5",
+                        "background": "#f7f9fb",
+                        "secondary-fixed": "#cbe7f5",
+                        "secondary-fixed-dim": "#afcbd8",
+                        "on-error": "#ffffff",
+                        "tertiary-container": "#9f4300",
+                        "secondary": "#48626e",
+                        "on-tertiary-fixed-variant": "#793100",
+                        "on-background": "#191c1e",
+                        "on-secondary-fixed": "#021f29",
+                        "tertiary": "#793100",
+                        "inverse-on-surface": "#eff1f3",
+                        "error-container": "#ffdad6",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed": "#001b3f",
+                        "error": "#ba1a1a",
+                        "on-tertiary-container": "#ffcfb9",
+                        "on-primary-fixed-variant": "#00458f",
+                        "on-primary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface-variant": "#424752",
+                        "tertiary-fixed": "#ffdbcb",
+                        "surface-container": "#eceef0",
+                        "surface-dim": "#d8dadc",
+                        "surface-bright": "#f7f9fb"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary-container selection:text-on-primary-container">
+<!-- SideNavBar (Shared Component) -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-[#f2f4f6] dark:bg-slate-900 flex flex-col h-full py-4 gap-2 z-50">
+<div class="px-6 mb-8">
+<h1 class="text-lg font-black text-[#005EB8] font-headline uppercase tracking-wider">The Clinical Vault</h1>
+<p class="text-[10px] text-on-surface-variant/70 font-medium tracking-[0.2em]">V1.0.4 COMPLIANCE</p>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-[#005EB8] hover:bg-[#ffffff]/50 transition-all scale-[0.98] active:scale-95 font-medium text-sm font-['Inter']" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-[#005EB8] hover:bg-[#ffffff]/50 transition-all scale-[0.98] active:scale-95 font-medium text-sm font-['Inter']" href="#">
+<span class="material-symbols-outlined" data-icon="add_to_photos">add_to_photos</span>
+<span>Device Intake</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-[#005EB8] hover:bg-[#ffffff]/50 transition-all scale-[0.98] active:scale-95 font-medium text-sm font-['Inter']" href="#">
+<span class="material-symbols-outlined" data-icon="precision_manufacturing">precision_manufacturing</span>
+<span>Destruction Procedures</span>
+</a>
+<!-- Active Tab: Batch Records -->
+<a class="flex items-center gap-3 px-4 py-3 bg-[#ffffff] dark:bg-slate-800 text-[#005EB8] font-bold rounded-l-md shadow-sm transition-all scale-[0.98] font-['Inter'] text-sm" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+<span>Batch Records</span>
+</a>
+</nav>
+<div class="px-4 mt-auto space-y-1 border-t border-outline-variant/10 pt-4">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-[#005EB8] hover:bg-[#ffffff]/50 transition-all scale-[0.98] active:scale-95 font-medium text-sm font-['Inter']" href="#">
+<span class="material-symbols-outlined" data-icon="history_edu">history_edu</span>
+<span>Audit Logs</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-[#005EB8] hover:bg-[#ffffff]/50 transition-all scale-[0.98] active:scale-95 font-medium text-sm font-['Inter']" href="#">
+<span class="material-symbols-outlined" data-icon="biometric_setup">android_fingerprint</span>
+<span>System Health</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 min-h-screen flex flex-col">
+<!-- TopNavBar (Shared Component) -->
+<header class="w-full top-0 sticky bg-[#ffffff] dark:bg-slate-950 flex justify-between items-center h-16 px-8 w-full z-40">
+<div class="flex items-center gap-4">
+<span class="text-xl font-bold text-[#191c1e] dark:text-slate-100 font-['Manrope'] tracking-tight">CityServe Compliance</span>
+<div class="h-4 w-[1px] bg-outline-variant/30"></div>
+<span class="text-sm font-medium text-on-surface-variant">Central Batch Repository</span>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center bg-surface-container-low px-3 py-1.5 rounded-lg border border-transparent focus-within:border-primary/20 transition-all">
+<span class="material-symbols-outlined text-on-surface-variant text-lg" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-48 font-body" placeholder="Search Device ID..." type="text"/>
+</div>
+<div class="flex items-center gap-4 text-slate-500">
+<button class="hover:bg-slate-100 dark:hover:bg-slate-800 p-2 rounded-full transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="hover:bg-slate-100 dark:hover:bg-slate-800 p-2 rounded-full transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant/30">
+<img alt="Administrator profile" data-alt="Close up professional portrait of a male administrator in a clean office setting, high key lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHL5grgEaAb54b1TMkFwB4cmsfRjOan0UYdOUleDmZlAuL8zbbICP5CWA-a35u8U2-mZcaphAwPl_TYTSsPzR9Uk1owH2lACHQ3wW4DWBiGycgrT0ltmjlq0ngEBOPRv7A63A9NH3702KmUQp4i4nGt1LE_IFQycL6G8fkgg2xRSjhf3HIQNSaE0II3kfC8tUNw8fsanL6HNGcuIxbRfVhYZZrUHSCzTm6C4k7axA7vJfs-z2Q7NehGVKIrlOfbwZYDvtwSK5RNQ"/>
+</div>
+</div>
+</div>
+</header>
+<section class="p-8 space-y-8 max-w-[1400px] mx-auto w-full">
+<!-- Page Header & Stats Summary -->
+<div class="grid grid-cols-12 gap-6">
+<div class="col-span-12 lg:col-span-8">
+<h2 class="text-3xl font-extrabold font-headline tracking-tight text-on-surface">Batch Records</h2>
+<p class="text-on-surface-variant mt-1">Verified sterilization and sanitization audit trails for municipal hardware.</p>
+</div>
+<div class="col-span-12 lg:col-span-4 flex justify-end items-end gap-3">
+<button class="flex items-center gap-2 px-4 py-2.5 bg-secondary-container text-on-secondary-container rounded-lg font-medium text-sm transition-all hover:opacity-90">
+<span class="material-symbols-outlined text-lg" data-icon="file_upload">file_upload</span>
+                        Bulk Export
+                    </button>
+<button class="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-br from-primary to-primary-container text-on-primary rounded-lg font-bold text-sm shadow-sm hover:brightness-110 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-lg" data-icon="add">add</span>
+                        New Destruction
+                    </button>
+</div>
+</div>
+<!-- Precision Filters Bar -->
+<div class="bg-surface-container-lowest rounded-xl p-4 flex flex-wrap items-center gap-6 shadow-[0_4px_20px_rgba(25,28,30,0.03)] border-l-4 border-primary">
+<div class="flex-1 min-w-[200px]">
+<label class="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1 ml-1">Device Type</label>
+<select class="w-full bg-surface-container-high border-none rounded-lg text-sm py-2 px-3 focus:ring-2 focus:ring-primary/20">
+<option>All Hardware</option>
+<option>Laptops &amp; Mobile</option>
+<option>Servers &amp; Storage</option>
+<option>Network Assets</option>
+<option>Peripheral Units</option>
+</select>
+</div>
+<div class="flex-1 min-w-[200px]">
+<label class="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1 ml-1">Status Verification</label>
+<select class="w-full bg-surface-container-high border-none rounded-lg text-sm py-2 px-3 focus:ring-2 focus:ring-primary/20">
+<option>All Statuses</option>
+<option>Documented</option>
+<option>Processing</option>
+<option>Pending Audit</option>
+<option>Failed Sanitization</option>
+</select>
+</div>
+<div class="flex-1 min-w-[240px]">
+<label class="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1 ml-1">Completion Window</label>
+<div class="flex items-center gap-2">
+<input class="flex-1 bg-surface-container-high border-none rounded-lg text-sm py-2 px-3 focus:ring-2 focus:ring-primary/20" type="date"/>
+<span class="text-outline">to</span>
+<input class="flex-1 bg-surface-container-high border-none rounded-lg text-sm py-2 px-3 focus:ring-2 focus:ring-primary/20" type="date"/>
+</div>
+</div>
+<div class="flex items-end self-end pb-0.5">
+<button class="p-2 text-primary hover:bg-primary-container/10 rounded-lg transition-colors">
+<span class="material-symbols-outlined" data-icon="filter_list_off">filter_list_off</span>
+</button>
+</div>
+</div>
+<!-- Technical Data Table -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-[0_4px_24px_rgba(25,28,30,0.04)]">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low">
+<th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant">Device ID</th>
+<th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant">Serial Number</th>
+<th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant">Hardware Type</th>
+<th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant">Assigned Worker</th>
+<th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant">Completion</th>
+<th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant">Audit Status</th>
+<th class="px-6 py-4 text-[10px] font-bold uppercase tracking-[0.1em] text-on-surface-variant text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/5">
+<!-- Row 1: Active/Recent -->
+<tr class="hover:bg-surface-bright transition-colors">
+<td class="px-6 py-4">
+<span class="font-mono text-sm font-semibold text-primary">AZ-PHX-9921-X</span>
+</td>
+<td class="px-6 py-4 font-mono text-xs text-on-surface-variant">SN: 458-BBQ-990-21</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-lg text-outline" data-icon="laptop_mac">laptop_mac</span>
+<span class="text-sm font-medium">Dell Latitude 5520</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<img alt="Worker" class="w-6 h-6 rounded-full grayscale opacity-80" data-alt="Portrait of a young professional technician in a clean laboratory setting, soft lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZNm2eYOyMI4oqu15fpQyIUPDZ6ySoiN2pUUFFJ7m7Yw2WypCsE3bzr8-NEYoL4s_MS0x8XJqlxcOmCd3UVSnlL0WoX1eHPlvOFnrDq0l3nWUJHWhyJJRbOCc_RZYf0tV8dlLgy6FtjQJL5Kww1Kc9gqgBqkQjNcfIJBVYLMmekBYHnrN0zkQG2VlnJCGLZFguNYdSQCvwiS-NMpLeEOVI4nTfcqO-_8o4KNGukpU80DYKzwd_-KUaVkmM0QjXZnFHHwiw5lHtiQ"/>
+<span class="text-sm">Marcus Chen</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant">Oct 24, 2023 · 14:32</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-secondary-container text-on-secondary-container">
+                                    Documented
+                                </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="inline-flex items-center gap-1.5 text-primary text-xs font-bold hover:underline">
+<span class="material-symbols-outlined text-sm" data-icon="download">download</span>
+                                    CERTIFICATE
+                                </button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="bg-surface-container-low/30 hover:bg-surface-bright transition-colors">
+<td class="px-6 py-4">
+<span class="font-mono text-sm font-semibold text-primary">AZ-MESA-1102-L</span>
+</td>
+<td class="px-6 py-4 font-mono text-xs text-on-surface-variant">SN: 112-OPR-443-10</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-lg text-outline" data-icon="dns">dns</span>
+<span class="text-sm font-medium">HP ProLiant Gen10</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<img alt="Worker" class="w-6 h-6 rounded-full grayscale opacity-80" data-alt="Studio portrait of a focused woman in professional attire, soft neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBeF42sB1cT4C-lTMbTPPDTZEyITk7WJssB8KaU-TJWsvmLUjdrqxSR_73l6trnNfKZZIf6itUeU5iPJYYk0dslrPF0_znn4uNsVfv-lVkIc25F8nS3G_1rlwXMnpxx8xdaqfyg4VxEWTav-YmeJovne7c5pQgYCBNArRSJH4NP2Tmw0k_0X4Ql-E9VPyrIYNxMTE6PtsqtnIy7h32pr8S-_EnhLVZiQGzS6VYT6AP7kSj3lRBOUdE8a1qLLas6lJ56VoHcPCaBLw"/>
+<span class="text-sm">Sarah Jenkins</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant">Oct 23, 2023 · 09:15</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-secondary-container text-on-secondary-container">
+                                    Documented
+                                </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="inline-flex items-center gap-1.5 text-primary text-xs font-bold hover:underline">
+<span class="material-symbols-outlined text-sm" data-icon="download">download</span>
+                                    CERTIFICATE
+                                </button>
+</td>
+</tr>
+<!-- Row 3: Warning/Processing -->
+<tr class="hover:bg-surface-bright transition-colors">
+<td class="px-6 py-4">
+<span class="font-mono text-sm font-semibold text-primary">AZ-TEM-4040-S</span>
+</td>
+<td class="px-6 py-4 font-mono text-xs text-on-surface-variant">SN: 771-XKS-001-99</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-lg text-outline" data-icon="storage">storage</span>
+<span class="text-sm font-medium">EMC Unity Array</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-outline-variant flex items-center justify-center text-[8px] text-on-surface-variant">JD</div>
+<span class="text-sm">John Doe</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant">Pending...</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-tertiary/10 text-tertiary">
+                                    In Processing
+                                </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="inline-flex items-center gap-1.5 text-outline text-xs font-bold cursor-not-allowed opacity-50" disabled="">
+<span class="material-symbols-outlined text-sm" data-icon="lock">lock</span>
+                                    WAITING
+                                </button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="bg-surface-container-low/30 hover:bg-surface-bright transition-colors">
+<td class="px-6 py-4">
+<span class="font-mono text-sm font-semibold text-primary">AZ-GIL-0021-M</span>
+</td>
+<td class="px-6 py-4 font-mono text-xs text-on-surface-variant">SN: 009-MMZ-121-88</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-lg text-outline" data-icon="smartphone">smartphone</span>
+<span class="text-sm font-medium">iPhone 13 Enterprise</span>
+</div>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<img alt="Worker" class="w-6 h-6 rounded-full grayscale opacity-80" data-alt="Professional woman portrait with neutral expression, high definition, sterile environment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA07BzmqnO25hfKixavWKsYaxPT0P1xkzi9H9mZrCuf2X8oVCxOw7Hr1c2FkRrkth4vqf0wRqNBaPwAoorHMJYnCqByye43wjQzvjx2PNY3oj76sAN2AmeMPK-vBNrNWreGXbby7OT4xwLLEvbjgMKGBP4HKcFI5_7dQtJFi0VAT-uWMX0Yxfg_a2rWaHEzN9ixa_vE--lBBHk3pTaSIwSs_ax5NQ5uGKWSjTzZ1KIqxe-00YEdEYbMIV0tghTFzDOwf43XaysI2g"/>
+<span class="text-sm">Amanda Ray</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant">Oct 21, 2023 · 16:50</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-secondary-container text-on-secondary-container">
+                                    Documented
+                                </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="inline-flex items-center gap-1.5 text-primary text-xs font-bold hover:underline">
+<span class="material-symbols-outlined text-sm" data-icon="download">download</span>
+                                    CERTIFICATE
+                                </button>
+</td>
+</tr>
+</tbody>
+</table>
+<!-- Table Footer / Pagination -->
+<div class="px-6 py-4 bg-surface-container-high/20 flex items-center justify-between border-t border-outline-variant/10">
+<span class="text-xs text-on-surface-variant">Showing <span class="font-bold">1-15</span> of 1,284 records</span>
+<div class="flex gap-2">
+<button class="p-2 hover:bg-surface-container-high rounded-md transition-colors text-outline">
+<span class="material-symbols-outlined text-lg" data-icon="chevron_left">chevron_left</span>
+</button>
+<button class="px-3 py-1 bg-primary text-on-primary text-xs font-bold rounded-md">1</button>
+<button class="px-3 py-1 hover:bg-surface-container-high text-xs font-medium rounded-md">2</button>
+<button class="px-3 py-1 hover:bg-surface-container-high text-xs font-medium rounded-md">3</button>
+<span class="px-2 self-center text-outline">...</span>
+<button class="p-2 hover:bg-surface-container-high rounded-md transition-colors text-outline">
+<span class="material-symbols-outlined text-lg" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Dashboard Style Metrics Bento Section -->
+<div class="grid grid-cols-12 gap-6 pb-12">
+<div class="col-span-12 md:col-span-4 bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/5">
+<div class="flex justify-between items-start mb-4">
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Audit Compliance</span>
+<span class="material-symbols-outlined text-primary" data-icon="verified_user" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+</div>
+<div class="flex items-end gap-2">
+<span class="text-4xl font-extrabold font-headline tracking-tighter">99.8%</span>
+<span class="text-xs text-secondary font-bold mb-1">+0.2%</span>
+</div>
+<div class="mt-4 flex gap-1 h-2">
+<div class="flex-1 bg-primary rounded-sm"></div>
+<div class="flex-1 bg-primary rounded-sm"></div>
+<div class="flex-1 bg-primary rounded-sm"></div>
+<div class="flex-1 bg-primary rounded-sm"></div>
+<div class="flex-1 bg-primary rounded-sm"></div>
+<div class="flex-1 bg-primary rounded-sm"></div>
+<div class="flex-1 bg-primary rounded-sm"></div>
+<div class="flex-1 bg-primary rounded-sm"></div>
+<div class="flex-1 bg-primary rounded-sm"></div>
+<div class="flex-1 bg-outline-variant rounded-sm"></div>
+</div>
+<p class="text-[10px] text-on-surface-variant mt-2">1,282 verified / 2 pending manual audit</p>
+</div>
+<div class="col-span-12 md:col-span-8 bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/5 relative overflow-hidden">
+<div class="relative z-10 flex flex-col h-full">
+<div class="flex justify-between items-start mb-4">
+<span class="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">Destruction Trends (30D)</span>
+<div class="flex gap-2">
+<span class="inline-flex items-center gap-1 text-[10px] font-bold"><span class="w-2 h-2 rounded-full bg-primary"></span> SANITIZED</span>
+<span class="inline-flex items-center gap-1 text-[10px] font-bold"><span class="w-2 h-2 rounded-full bg-tertiary"></span> CRUSHED</span>
+</div>
+</div>
+<div class="flex-1 flex items-end gap-3 min-h-[80px]">
+<div class="flex-1 bg-surface-container-high rounded-t-sm h-[60%] hover:bg-primary transition-colors"></div>
+<div class="flex-1 bg-surface-container-high rounded-t-sm h-[40%] hover:bg-primary transition-colors"></div>
+<div class="flex-1 bg-surface-container-high rounded-t-sm h-[85%] hover:bg-primary transition-colors"></div>
+<div class="flex-1 bg-surface-container-high rounded-t-sm h-[30%] hover:bg-primary transition-colors"></div>
+<div class="flex-1 bg-surface-container-high rounded-t-sm h-[55%] hover:bg-primary transition-colors"></div>
+<div class="flex-1 bg-primary/20 rounded-t-sm h-[95%] hover:bg-primary transition-colors"></div>
+<div class="flex-1 bg-surface-container-high rounded-t-sm h-[45%] hover:bg-primary transition-colors"></div>
+<div class="flex-1 bg-surface-container-high rounded-t-sm h-[70%] hover:bg-primary transition-colors"></div>
+<div class="flex-1 bg-surface-container-high rounded-t-sm h-[20%] hover:bg-primary transition-colors"></div>
+<div class="flex-1 bg-primary rounded-t-sm h-[100%]"></div>
+</div>
+<p class="text-[10px] text-on-surface-variant mt-4 text-right italic font-medium">Real-time throughput monitored by Clinical Vault Engine</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+</body></html>

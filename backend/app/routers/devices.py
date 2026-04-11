@@ -143,6 +143,15 @@ def complete_step(
     )
 
 
+@router.get("/procedures/{procedure_id}")
+def get_procedure(procedure_id: str, user: dict = Depends(get_current_user)):
+    result = get_procedures_table().get_item(Key={"procedure_id": procedure_id})
+    item = result.get("Item")
+    if not item:
+        raise HTTPException(status_code=404, detail="Procedure not found")
+    return item
+
+
 @router.post("/devices/{device_id}/complete", response_model=DeviceCompleteResponse)
 def complete_device(
     device_id: str,
