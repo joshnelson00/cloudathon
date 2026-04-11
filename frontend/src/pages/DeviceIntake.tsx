@@ -1,16 +1,19 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { FiAlertCircle, FiArrowRight, FiCpu } from "react-icons/fi"
 import { api } from "../api/client"
 import Layout from "../components/Layout"
 
 const DEVICE_TYPES = [
-  { value: "laptop_hdd", label: "Laptop - HDD" },
-  { value: "laptop_ssd", label: "Laptop - SSD" },
-  { value: "desktop_hdd", label: "Desktop - HDD" },
-  { value: "desktop_ssd", label: "Desktop - SSD" },
-  { value: "tablet", label: "Tablet / Mobile" },
-  { value: "drive_external", label: "External Drive" },
-  { value: "no_storage", label: "Device with No Storage" },
+  { value: "laptop_hdd",         label: "Laptop — HDD (spinning disk)" },
+  { value: "laptop_ssd_sata",    label: "Laptop — SATA SSD" },
+  { value: "laptop_ssd_nvme",    label: "Laptop — NVMe SSD (M.2)" },
+  { value: "desktop_hdd",        label: "Desktop — HDD (spinning disk)" },
+  { value: "desktop_ssd",        label: "Desktop — SSD" },
+  { value: "tablet",             label: "Tablet / Mobile Device" },
+  { value: "drive_external_hdd", label: "External Drive — HDD" },
+  { value: "drive_external_ssd", label: "External Drive — SSD" },
+  { value: "no_storage",         label: "Device with No Storage" },
 ]
 
 export default function DeviceIntake() {
@@ -54,9 +57,10 @@ export default function DeviceIntake() {
     <Layout>
       <div className="max-w-2xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Device Intake
-          </h1>
+          <div className="flex items-center gap-3 mb-2">
+            <FiCpu className="text-blue-600" size={28} />
+            <h1 className="text-3xl font-bold text-gray-900">Device Intake</h1>
+          </div>
           <p className="text-gray-600">
             Register a new device for NIST SP 800-88 compliant destruction
           </p>
@@ -65,7 +69,8 @@ export default function DeviceIntake() {
         <div className="bg-white rounded-lg border border-gray-200 p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <FiAlertCircle className="text-red-600 mt-0.5 shrink-0" size={18} />
                 <p className="text-red-800 text-sm">{error}</p>
               </div>
             )}
@@ -84,7 +89,8 @@ export default function DeviceIntake() {
                 required
               />
               <p className="text-xs text-gray-500 mt-1">
-                The unique identifier on the device chassis
+                The serial number on the chassis label — not the drive serial.
+                The drive serial is recorded during the procedure.
               </p>
             </div>
 
@@ -105,7 +111,8 @@ export default function DeviceIntake() {
                 ))}
               </select>
               <p className="text-xs text-gray-500 mt-1">
-                This determines the NIST procedure to follow
+                This determines the NIST procedure. If unsure whether a laptop
+                has SATA or NVMe, check the BIOS storage settings.
               </p>
             </div>
 
@@ -141,7 +148,11 @@ export default function DeviceIntake() {
                 disabled={loading}
                 className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 font-bold transition"
               >
-                {loading ? "Creating..." : "Create Device Record"}
+                {loading ? "Creating..." : (
+                <span className="flex items-center justify-center gap-2">
+                  Start Procedure <FiArrowRight size={18} />
+                </span>
+              )}
               </button>
               <button
                 type="button"

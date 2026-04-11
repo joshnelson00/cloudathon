@@ -1,12 +1,25 @@
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
+import { FiShield, FiAlertTriangle, FiFileText, FiCheck, FiWifi, FiLoader, FiCheckCircle } from "react-icons/fi"
 import { api } from "../api/client"
 import Layout from "../components/Layout"
+
+interface InputField {
+  name: string
+  label: string
+  type: "text" | "number" | "select"
+  options?: string[]
+  required: boolean
+}
+
+type WipeSimPhase = "idle" | "connecting" | "reading" | "complete"
 
 interface Step {
   id: string
   instruction: string
   requires_confirmation: boolean
+  input_fields: InputField[] | null
+  wipe_api_sim?: boolean
 }
 
 interface CompletedStep {
@@ -18,7 +31,7 @@ interface CompletedStep {
 
 interface Device {
   device_id: string
-  serial_number: string
+  chassis_serial: string
   device_type: string
   make_model: string
   status: string
@@ -34,6 +47,8 @@ export default function DeviceDetail() {
   const [loading, setLoading] = useState(true)
   const [completing, setCompleting] = useState(false)
   const [error, setError] = useState("")
+  const [stepInputs, setStepInputs] = useState<Record<string, Record<string, string>>>({})
+  const [wipeSimPhase, setWipeSimPhase] = useState<WipeSimPhase>("idle")
 
   useEffect(() => {
     loadDevice()
@@ -59,27 +74,60 @@ export default function DeviceDetail() {
     }
   }
 
-  const handleStepComplete = async (stepId: string) => {
+  const handleInputChange = (stepId: string, fieldName: string, value: string) => {
+    setStepInputs((prev) => ({
+      ...prev,
+      [stepId]: { ...(prev[stepId] || {}), [fieldName]: value },
+    }))
+  }
+
+  const handleStepComplete = async (step: Step) => {
     if (!id || !device) return
+
+    // Validate required input fields
+    if (step.input_fields) {
+      for (const field of step.input_fields) {
+        if (field.required && !stepInputs[step.id]?.[field.name]?.trim()) {
+          setError(`Please fill in "${field.label}" before confirming.`)
+          return
+        }
+      }
+    }
+    setError("")
 
     try {
       await api.patch(`/api/devices/${id}/step`, {
-        step_id: stepId,
+        step_id: step.id,
         confirmed: true,
-        input_data: formData[stepId] ? { value: formData[stepId] } : {},
+        notes: "",
+        input_data: stepInputs[step.id] || {},
       })
-      loadDevice()
+      await loadDevice()
     } catch (err) {
       console.error("Failed to complete step:", err)
+      setError("Failed to confirm step. Please try again.")
     }
+  }
+
+  const startWipeSim = (step: Step) => {
+    setWipeSimPhase("connecting")
+    setTimeout(() => {
+      setWipeSimPhase("reading")
+      setTimeout(() => {
+        setWipeSimPhase("complete")
+        setTimeout(() => {
+          handleStepComplete({ ...step, input_fields: null, wipe_api_sim: false })
+          setWipeSimPhase("idle")
+        }, 1500)
+      }, 2000)
+    }, 2000)
   }
 
   const handleComplete = async () => {
     if (!id) return
-
     try {
       setCompleting(true)
-      const response = await api.post(`/api/devices/${id}/complete`)
+      await api.post(`/api/devices/${id}/complete`)
       navigate(`/compliance/${id}`)
     } catch (err) {
       setError("Failed to complete device destruction")
@@ -115,7 +163,8 @@ export default function DeviceDetail() {
               Guided Destruction: {device.device_type}
             </h2>
             <p className="text-gray-600 flex items-center gap-2">
-              🔒 Compliance Standard: NIST 800-88 Rev. 1
+              <FiShield className="text-blue-600" size={16} />
+              Compliance Standard: NIST 800-88 Rev. 2
             </p>
           </div>
           <div className="w-full md:w-80">
@@ -128,9 +177,7 @@ export default function DeviceDetail() {
                 procedures.map((_, i) => (
                   <div
                     key={i}
-                    className={
-                      i < completedSteps ? "flex-1 bg-blue-600" : "flex-1 bg-gray-300"
-                    }
+                    className={i < completedSteps ? "flex-1 bg-blue-600" : "flex-1 bg-gray-300"}
                   />
                 ))
               ) : (
@@ -141,8 +188,9 @@ export default function DeviceDetail() {
         </div>
 
         {error && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
-            {error}
+          <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
+            <FiAlertTriangle className="mt-0.5 shrink-0" size={18} />
+            <span>{error}</span>
           </div>
         )}
 
@@ -150,10 +198,11 @@ export default function DeviceDetail() {
           {/* Steps Column */}
           <div className="lg:col-span-2 space-y-6">
             {procedures.map((step, index) => {
-              const isCompleted =
-                device?.steps_completed?.some((cs) => cs.step_id === step.id) ??
-                false
+              const isCompleted = device?.steps_completed?.some(
+                (cs) => cs.step_id === step.id
+              ) ?? false
               const isCurrentStep = index === completedSteps
+
               return (
                 <div
                   key={step.id}
@@ -168,18 +217,18 @@ export default function DeviceDetail() {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-4">
                       <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white ${
+                        className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white shrink-0 ${
                           isCompleted ? "bg-green-600" : "bg-blue-600"
                         }`}
                       >
-                        {isCompleted ? "✓" : index + 1}
+                        {isCompleted ? <FiCheck size={16} /> : index + 1}
                       </div>
                       <h3 className="font-bold text-lg text-gray-900">
                         {step.instruction}
                       </h3>
                     </div>
                     {isCompleted && (
-                      <span className="text-green-600 text-sm font-bold">
+                      <span className="text-green-600 text-sm font-bold shrink-0 ml-4">
                         Completed
                       </span>
                     )}
@@ -187,17 +236,85 @@ export default function DeviceDetail() {
 
                   {!isCompleted && isCurrentStep && (
                     <div className="space-y-4 px-12">
-                      <div className="flex items-center justify-between pt-4">
-                        <p className="text-xs text-amber-700 bg-amber-50 px-3 py-2 rounded">
-                          ⚠️ Verify details before confirming
-                        </p>
-                        <button
-                          onClick={() => handleStepComplete(step.id)}
-                          className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition"
-                        >
-                          Confirm Step
-                        </button>
-                      </div>
+                      {/* Input fields (drive details, tool info, etc.) */}
+                      {step.input_fields && step.input_fields.length > 0 && (
+                        <div className="space-y-3 pt-2">
+                          {step.input_fields.map((field) => (
+                            <div key={field.name}>
+                              <label className="block text-xs font-bold text-gray-700 mb-1">
+                                {field.label}
+                                {field.required && <span className="text-red-500 ml-1">*</span>}
+                              </label>
+                              {field.type === "select" ? (
+                                <select
+                                  value={stepInputs[step.id]?.[field.name] || ""}
+                                  onChange={(e) => handleInputChange(step.id, field.name, e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                  <option value="">Select...</option>
+                                  {field.options?.map((opt) => (
+                                    <option key={opt} value={opt}>{opt}</option>
+                                  ))}
+                                </select>
+                              ) : (
+                                <input
+                                  type={field.type}
+                                  value={stepInputs[step.id]?.[field.name] || ""}
+                                  onChange={(e) => handleInputChange(step.id, field.name, e.target.value)}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  placeholder={field.label}
+                                />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Wipe API simulation */}
+                      {step.wipe_api_sim ? (
+                        <div className="pt-4">
+                          {wipeSimPhase === "idle" && (
+                            <button
+                              onClick={() => startWipeSim(step)}
+                              className="w-full py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 transition flex items-center justify-center gap-2"
+                            >
+                              <FiWifi size={16} />
+                              Connect to Wiper API
+                            </button>
+                          )}
+                          {wipeSimPhase === "connecting" && (
+                            <div className="w-full py-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-center gap-3 text-blue-700">
+                              <FiLoader size={16} className="animate-spin" />
+                              <span className="text-sm font-bold">Connecting to device wiper API...</span>
+                            </div>
+                          )}
+                          {wipeSimPhase === "reading" && (
+                            <div className="w-full py-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-center gap-3 text-blue-700">
+                              <FiLoader size={16} className="animate-spin" />
+                              <span className="text-sm font-bold">Reading sanitization status...</span>
+                            </div>
+                          )}
+                          {wipeSimPhase === "complete" && (
+                            <div className="w-full py-3 bg-green-50 border border-green-300 rounded-lg flex items-center justify-center gap-3 text-green-700">
+                              <FiCheckCircle size={18} />
+                              <span className="text-sm font-bold">Wipe confirmed — PASS</span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between pt-4">
+                          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2 rounded flex items-center gap-2">
+                            <FiAlertTriangle size={14} />
+                            Verify details before confirming
+                          </p>
+                          <button
+                            onClick={() => handleStepComplete(step)}
+                            className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition"
+                          >
+                            Confirm Step
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -220,10 +337,8 @@ export default function DeviceDetail() {
                   </span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-gray-200">
-                  <span className="text-xs text-gray-600">Make/Model</span>
-                  <span className="text-sm font-bold">
-                    {device.chassis_make_model}
-                  </span>
+                  <span className="text-xs text-gray-600">Make / Model</span>
+                  <span className="text-sm font-bold">{device.make_model}</span>
                 </div>
                 <div className="flex justify-between py-2 border-b border-gray-200">
                   <span className="text-xs text-gray-600">Type</span>
@@ -256,7 +371,7 @@ export default function DeviceDetail() {
                     : "bg-white text-blue-600 hover:bg-blue-50"
                 }`}
               >
-                <span>📄</span>
+                <FiFileText size={18} />
                 {completing ? "Generating..." : "Generate Certificate"}
               </button>
               {completedSteps < totalSteps && (

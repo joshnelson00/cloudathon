@@ -29,10 +29,89 @@
     "device_type": "laptop_hdd",
     "make_model": "Macbook AwesomeX",
     "intake_timestamp": "2026-04-11T02:45:03.196737+00:00",
-    "status": "intake",
+    "status": "in_progress",
     "procedure_id": "hdd_purge_v1",
-    "steps_completed": [],
+    "steps_completed": [
+      {
+        "step_id": "hdd_1",
+        "confirmed": true,
+        "notes": "",
+        "timestamp": "2026-04-11T02:57:36.144565+00:00"
+      },
+      {
+        "step_id": "hdd_2",
+        "confirmed": true,
+        "notes": "",
+        "timestamp": "2026-04-11T02:59:44.420141+00:00"
+      }
+    ],
     "comp_doc": null,
     "wipe_result": null
+  },
+  "977d669a-394a-4b47-b685-6ad70feb3477": {
+    "device_id": "977d669a-394a-4b47-b685-6ad70feb3477",
+    "chassis_serial": "SN-1234",
+    "device_type": "tablet",
+    "make_model": "Infiniti Q50",
+    "intake_timestamp": "2026-04-11T03:05:07.374811+00:00",
+    "status": "documented",
+    "procedure_id": "tablet_factory_reset_v1",
+    "steps_completed": [
+      {
+        "step_id": "tab_1",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {
+          "drive_serial": "1234",
+          "drive_manufacturer": "Apple",
+          "drive_capacity_gb": "244",
+          "drive_model": "Iphone12 PRO"
+        },
+        "timestamp": "2026-04-11T03:05:45.288315+00:00"
+      },
+      {
+        "step_id": "tab_2",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T03:05:51.184873+00:00"
+      },
+      {
+        "step_id": "tab_3",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T03:05:53.767182+00:00"
+      },
+      {
+        "step_id": "tab_4",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T03:05:56.433107+00:00"
+      },
+      {
+        "step_id": "tab_5",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {
+          "wipe_result": "pass"
+        },
+        "timestamp": "2026-04-11T03:06:00.400866+00:00"
+      },
+      {
+        "step_id": "tab_6",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T03:06:03.350731+00:00"
+      }
+    ],
+    "comp_doc": "/api/compliance/977d669a-394a-4b47-b685-6ad70feb3477/download",
+    "wipe_result": true,
+    "drive_serial": "1234",
+    "drive_manufacturer": "Apple",
+    "drive_capacity_gb": "244",
+    "drive_model": "Iphone12 PRO"
   }
 }

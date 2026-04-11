@@ -83,6 +83,7 @@ PROCEDURES = [
                                "Per NIST SP 800-88r2 §3.1.1, a single overwrite pass is sufficient.",
                 "requires_confirmation": True,
                 "input_fields": None,
+                "wipe_api_sim": True,
             },
             {
                 "id": "hdd_7",
@@ -167,6 +168,7 @@ PROCEDURES = [
                 "instruction": "Issue the ATA Secure Erase command to the drive. Do NOT power off during the erase.",
                 "requires_confirmation": True,
                 "input_fields": None,
+                "wipe_api_sim": True,
             },
             {
                 "id": "ssd_7",
@@ -251,6 +253,7 @@ PROCEDURES = [
                                "(--ses=1 applies User Data Erase). Do NOT power off during the operation.",
                 "requires_confirmation": True,
                 "input_fields": None,
+                "wipe_api_sim": True,
             },
             {
                 "id": "nvme_7",
@@ -322,6 +325,7 @@ PROCEDURES = [
                                "Wait for the reset to complete — do not power off during this process.",
                 "requires_confirmation": True,
                 "input_fields": None,
+                "wipe_api_sim": True,
             },
             {
                 "id": "tab_5",
@@ -384,6 +388,7 @@ PROCEDURES = [
                 "instruction": "Run a single-pass overwrite on the drive. Do NOT disconnect during the process.",
                 "requires_confirmation": True,
                 "input_fields": None,
+                "wipe_api_sim": True,
             },
             {
                 "id": "exthdd_5",
@@ -446,6 +451,7 @@ PROCEDURES = [
                 "instruction": "Run the secure erase or overwrite. Do NOT disconnect during the process.",
                 "requires_confirmation": True,
                 "input_fields": None,
+                "wipe_api_sim": True,
             },
             {
                 "id": "extssd_5",
