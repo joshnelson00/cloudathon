@@ -6,6 +6,7 @@ import DeviceDetail from "./pages/DeviceDetail"
 import ComplianceRecord from "./pages/ComplianceRecord"
 import SearchDevices from "./pages/SearchDevices"
 import AllDevices from "./pages/AllDevices"
+import AdminDashboard from "./pages/AdminDashboard"
 
 export default function App() {
   const [ready, setReady] = useState(false)
@@ -26,6 +27,7 @@ export default function App() {
         <Route path="/intake" element={<DeviceIntake />} />
         <Route path="/device/:id" element={<DeviceDetail />} />
         <Route path="/compliance/:id" element={<ComplianceRecord />} />
+        <Route path="/admin" element={<AdminDashboard />} />
       </Routes>
     </Router>
   )
