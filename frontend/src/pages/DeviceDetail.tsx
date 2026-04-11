@@ -4,30 +4,37 @@ import { api } from "../api/client"
 import Layout from "../components/Layout"
 
 interface Step {
+  id: string
+  instruction: string
+  requires_confirmation: boolean
+}
+
+interface CompletedStep {
   step_id: string
-  description: string
-  completed: boolean
-  timestamp?: string
+  confirmed: boolean
+  notes: string
+  timestamp: string
 }
 
 interface Device {
   device_id: string
-  chassis_serial: string
+  serial_number: string
   device_type: string
-  chassis_make_model: string
+  make_model: string
   status: string
   worker_id: string
-  steps: Step[]
+  procedure_id: string
+  steps_completed: CompletedStep[]
 }
 
 export default function DeviceDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [device, setDevice] = useState<Device | null>(null)
+  const [procedures, setProcedures] = useState<Step[]>([])
   const [loading, setLoading] = useState(true)
   const [completing, setCompleting] = useState(false)
   const [error, setError] = useState("")
-  const [formData, setFormData] = useState<Record<string, string>>({})
 
   useEffect(() => {
     loadDevice()
@@ -37,8 +44,14 @@ export default function DeviceDetail() {
     if (!id) return
     try {
       setLoading(true)
-      const response = await api.get(`/api/devices/${id}`)
-      setDevice(response.data)
+      const deviceRes = await api.get(`/api/devices/${id}`)
+      const deviceData = deviceRes.data as Device
+      setDevice(deviceData)
+
+      if (deviceData.procedure_id) {
+        const procRes = await api.get(`/api/procedures/${deviceData.procedure_id}`)
+        setProcedures(procRes.data.steps || [])
+      }
     } catch (err) {
       setError("Failed to load device details")
       console.error(err)
@@ -89,9 +102,9 @@ export default function DeviceDetail() {
     )
   }
 
-  const completedSteps = device.steps?.filter((s) => s.completed).length || 0
-  const totalSteps = device.steps?.length || 1
-  const progress = Math.round((completedSteps / totalSteps) * 100)
+  const completedSteps = device.steps_completed?.length || 0
+  const totalSteps = procedures.length || 1
+  const progress = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0
 
   return (
     <Layout>
@@ -112,14 +125,18 @@ export default function DeviceDetail() {
               <span>{progress}%</span>
             </div>
             <div className="flex gap-1 h-3 bg-gray-200 rounded overflow-hidden">
-              {Array.from({ length: totalSteps }).map((_, i) => (
-                <div
-                  key={i}
-                  className={
-                    i < completedSteps ? "flex-1 bg-blue-600" : "flex-1 bg-gray-300"
-                  }
-                />
-              ))}
+              {procedures.length > 0 ? (
+                procedures.map((_, i) => (
+                  <div
+                    key={i}
+                    className={
+                      i < completedSteps ? "flex-1 bg-blue-600" : "flex-1 bg-gray-300"
+                    }
+                  />
+                ))
+              ) : (
+                <div className="flex-1 bg-gray-300" />
+              )}
             </div>
           </div>
         </div>
@@ -133,75 +150,60 @@ export default function DeviceDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Steps Column */}
           <div className="lg:col-span-2 space-y-6">
-            {device.steps?.map((step, index) => (
-              <div
-                key={step.step_id}
-                className={`bg-white rounded-lg p-6 border-l-4 transition ${
-                  step.completed
-                    ? "border-green-500"
-                    : index === completedSteps
-                    ? "border-blue-500 ring-2 ring-blue-200"
-                    : "border-gray-300"
-                }`}
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-4">
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white ${
-                        step.completed ? "bg-green-600" : "bg-blue-600"
-                      }`}
-                    >
-                      {step.completed ? "✓" : index + 1}
+            {procedures.map((step, index) => {
+              const isCompleted =
+                device?.steps_completed?.some((cs) => cs.step_id === step.id) ??
+                false
+              const isCurrentStep = index === completedSteps
+              return (
+                <div
+                  key={step.id}
+                  className={`bg-white rounded-lg p-6 border-l-4 transition ${
+                    isCompleted
+                      ? "border-green-500"
+                      : isCurrentStep
+                      ? "border-blue-500 ring-2 ring-blue-200"
+                      : "border-gray-300"
+                  }`}
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-4">
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white ${
+                          isCompleted ? "bg-green-600" : "bg-blue-600"
+                        }`}
+                      >
+                        {isCompleted ? "✓" : index + 1}
+                      </div>
+                      <h3 className="font-bold text-lg text-gray-900">
+                        {step.instruction}
+                      </h3>
                     </div>
-                    <h3 className="font-bold text-lg text-gray-900">
-                      {step.description}
-                    </h3>
+                    {isCompleted && (
+                      <span className="text-green-600 text-sm font-bold">
+                        Completed
+                      </span>
+                    )}
                   </div>
-                  {step.completed && (
-                    <span className="text-green-600 text-sm font-bold">
-                      Completed
-                    </span>
+
+                  {!isCompleted && isCurrentStep && (
+                    <div className="space-y-4 px-12">
+                      <div className="flex items-center justify-between pt-4">
+                        <p className="text-xs text-amber-700 bg-amber-50 px-3 py-2 rounded">
+                          ⚠️ Verify details before confirming
+                        </p>
+                        <button
+                          onClick={() => handleStepComplete(step.id)}
+                          className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition"
+                        >
+                          Confirm Step
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
-
-                {!step.completed && index === completedSteps && (
-                  <div className="space-y-4 px-12">
-                    {step.step_id === "drive_details" && (
-                      <div className="grid grid-cols-2 gap-4">
-                        <input
-                          type="text"
-                          placeholder="Drive Serial"
-                          className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              [step.step_id]: e.target.value,
-                            })
-                          }
-                        />
-                        <input
-                          type="text"
-                          placeholder="Manufacturer"
-                          className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between pt-4">
-                      <p className="text-xs text-amber-700 bg-amber-50 px-3 py-2 rounded">
-                        ⚠️ Verify details before confirming
-                      </p>
-                      <button
-                        onClick={() => handleStepComplete(step.step_id)}
-                        className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition"
-                      >
-                        Confirm Step
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
+              )
+            })}
           </div>
 
           {/* Right Sidebar */}

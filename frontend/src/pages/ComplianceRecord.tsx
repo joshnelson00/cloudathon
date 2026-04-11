@@ -6,10 +6,7 @@ import Layout from "../components/Layout"
 interface ComplianceData {
   device_id: string
   compliance_doc_url: string
-  generated_at: string
-  device_type: string
-  chassis_serial: string
-  status: string
+  generated_at?: string
 }
 
 export default function ComplianceRecord() {
@@ -72,8 +69,12 @@ export default function ComplianceRecord() {
     )
   }
 
-  const generatedDate = new Date(data.generated_at).toLocaleDateString()
-  const generatedTime = new Date(data.generated_at).toLocaleTimeString()
+  const generatedDate = data.generated_at
+    ? new Date(data.generated_at).toLocaleDateString()
+    : "N/A"
+  const generatedTime = data.generated_at
+    ? new Date(data.generated_at).toLocaleTimeString()
+    : "N/A"
 
   return (
     <Layout>
@@ -108,20 +109,6 @@ export default function ComplianceRecord() {
                     {data.device_id}
                   </p>
                 </div>
-                <div>
-                  <p className="text-xs text-gray-600 mb-1">Serial Number</p>
-                  <p className="font-bold text-gray-900">
-                    {data.chassis_serial}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600 mb-1">Device Type</p>
-                  <p className="font-bold text-gray-900">{data.device_type}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600 mb-1">Status</p>
-                  <p className="font-bold text-green-600">{data.status}</p>
-                </div>
               </div>
             </section>
 
@@ -139,14 +126,18 @@ export default function ComplianceRecord() {
                     NIST 800-88 Compliant
                   </p>
                 </div>
-                <div>
-                  <p className="text-xs text-gray-600 mb-1">Generated Date</p>
-                  <p className="font-bold text-gray-900">{generatedDate}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-gray-600 mb-1">Generated Time</p>
-                  <p className="font-bold text-gray-900">{generatedTime}</p>
-                </div>
+                {data.generated_at && (
+                  <>
+                    <div>
+                      <p className="text-xs text-gray-600 mb-1">Generated Date</p>
+                      <p className="font-bold text-gray-900">{generatedDate}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 mb-1">Generated Time</p>
+                      <p className="font-bold text-gray-900">{generatedTime}</p>
+                    </div>
+                  </>
+                )}
                 <div>
                   <p className="text-xs text-gray-600 mb-1">Organization</p>
                   <p className="font-bold text-gray-900">CityServe Arizona</p>

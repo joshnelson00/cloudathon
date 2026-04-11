@@ -5,16 +5,18 @@ import Layout from "../components/Layout"
 
 interface DeviceStats {
   total: number
+  intake: number
   in_progress: number
-  completed: number
+  verified: number
+  documented: number
   by_type: Record<string, number>
 }
 
 interface Device {
   device_id: string
-  chassis_serial: string
+  serial_number: string
   device_type: string
-  chassis_make_model: string
+  make_model: string
   status: string
   worker_id: string
   intake_timestamp: string
@@ -23,8 +25,10 @@ interface Device {
 export default function Dashboard() {
   const [stats, setStats] = useState<DeviceStats>({
     total: 0,
+    intake: 0,
     in_progress: 0,
-    completed: 0,
+    verified: 0,
+    documented: 0,
     by_type: {},
   })
   const [devices, setDevices] = useState<Device[]>([])
@@ -206,7 +210,7 @@ export default function Dashboard() {
                       className="border-b border-gray-200 hover:bg-gray-50"
                     >
                       <td className="px-6 py-4 font-mono font-bold text-blue-600">
-                        {device.chassis_serial}
+                        {device.serial_number}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600">
                         {device.device_type}

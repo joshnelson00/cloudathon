@@ -6,17 +6,18 @@ import Layout from "../components/Layout"
 const DEVICE_TYPES = [
   { value: "laptop_hdd", label: "Laptop - HDD" },
   { value: "laptop_ssd", label: "Laptop - SSD" },
+  { value: "desktop_hdd", label: "Desktop - HDD" },
+  { value: "desktop_ssd", label: "Desktop - SSD" },
   { value: "tablet", label: "Tablet / Mobile" },
-  { value: "drive_external_hdd", label: "External Drive - HDD" },
-  { value: "drive_external_ssd", label: "External Drive - SSD" },
+  { value: "drive_external", label: "External Drive" },
   { value: "no_storage", label: "Device with No Storage" },
 ]
 
 export default function DeviceIntake() {
   const [formData, setFormData] = useState({
-    chassis_serial: "",
+    serial_number: "",
     device_type: "laptop_hdd",
-    chassis_make_model: "",
+    make_model: "",
   })
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
@@ -71,12 +72,12 @@ export default function DeviceIntake() {
 
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">
-                Chassis Serial Number
+                Serial Number
               </label>
               <input
                 type="text"
-                name="chassis_serial"
-                value={formData.chassis_serial}
+                name="serial_number"
+                value={formData.serial_number}
                 onChange={handleChange}
                 placeholder="e.g., SN-9920-XLT"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -114,8 +115,8 @@ export default function DeviceIntake() {
               </label>
               <input
                 type="text"
-                name="chassis_make_model"
-                value={formData.chassis_make_model}
+                name="make_model"
+                value={formData.make_model}
                 onChange={handleChange}
                 placeholder="e.g., Dell Latitude 5400"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
