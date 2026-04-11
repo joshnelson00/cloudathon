@@ -136,6 +136,14 @@ def _build_pdf_bytes(device):
     generated_at = datetime.now(timezone.utc).strftime("%B %d, %Y at %H:%M UTC")
     device_type  = device.get("device_type", "")
 
+    OS_LABELS = {
+        "windows":     "Windows",
+        "linux":       "Linux",
+        "macos_apple": "macOS — Apple Silicon",
+        "macos_intel": "macOS — Intel",
+    }
+    os_str = OS_LABELS.get(device.get("os", ""), device.get("os", "") or "—")
+
     story = []
 
     # Header
@@ -155,6 +163,7 @@ def _build_pdf_bytes(device):
         ["Chassis Serial", device.get("chassis_serial", "—")],
         ["Make / Model",   device.get("make_model", "—")],
         ["Device Type",    DEVICE_TYPE_LABELS.get(device_type, device_type or "—")],
+        ["OS Identified",  os_str],
         ["Intake Date",    _fmt_ts(device.get("intake_timestamp", ""))],
     ]))
 

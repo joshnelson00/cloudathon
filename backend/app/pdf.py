@@ -146,6 +146,14 @@ def _build_pdf_bytes(device: dict) -> bytes:
     generated_at = datetime.now(timezone.utc).strftime("%B %d, %Y at %H:%M UTC")
     device_type  = device.get("device_type", "")
 
+    OS_LABELS = {
+        "windows":     "Windows",
+        "linux":       "Linux",
+        "macos_apple": "macOS — Apple Silicon",
+        "macos_intel": "macOS — Intel",
+    }
+    os_str = OS_LABELS.get(device.get("os", ""), device.get("os", "") or "—")
+
     story = []
 
     # ── Header ────────────────────────────────────────────────────────────────

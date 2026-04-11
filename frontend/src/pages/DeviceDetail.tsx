@@ -10,9 +10,11 @@ interface InputField {
   type: "text" | "number" | "select"
   options?: string[]
   required: boolean
+  hint?: string
 }
 
 type WipeSimPhase = "idle" | "connecting" | "reading" | "complete"
+type PrefillPhase = "idle" | "connecting" | "reading" | "complete"
 
 interface Step {
   id: string
@@ -20,6 +22,7 @@ interface Step {
   requires_confirmation: boolean
   input_fields: InputField[] | null
   wipe_api_sim?: boolean
+  wipe_api_prefill?: boolean
 }
 
 interface CompletedStep {
@@ -40,6 +43,36 @@ interface Device {
   comp_doc?: string | null
 }
 
+// ── Mock wipe tool API response ───────────────────────────────────────────────
+
+function getMockApiData(deviceType: string): Record<string, string> {
+  const rand = () => Math.random().toString(36).substring(2, 8).toUpperCase()
+  const drives: Record<string, { manufacturer: string; model: string; serial: string; capacity: string }> = {
+    laptop_ssd_nvme:    { manufacturer: "Samsung",        model: "MZVLB512HAJQ-000H1", serial: "S3EVNX0K" + rand(), capacity: "512"  },
+    laptop_ssd_sata:    { manufacturer: "Crucial",        model: "CT500MX500SSD1",     serial: "2142E" + rand(),    capacity: "500"  },
+    laptop_hdd:         { manufacturer: "Seagate",        model: "ST1000LM035-1RK172", serial: "WCT3" + rand(),     capacity: "1000" },
+    laptop_ssd:         { manufacturer: "Samsung",        model: "860 EVO 500GB",      serial: "S4EUNX0K" + rand(), capacity: "500"  },
+    desktop_hdd:        { manufacturer: "Western Digital",model: "WD10EZEX-08WN4A0",   serial: "WD-WCC" + rand(),   capacity: "1000" },
+    desktop_ssd:        { manufacturer: "Samsung",        model: "870 EVO 500GB",      serial: "S5EVNF0R" + rand(), capacity: "500"  },
+    drive_external_hdd: { manufacturer: "Western Digital",model: "WD Elements 2TB",    serial: "WXL1" + rand(),     capacity: "2000" },
+    drive_external_ssd: { manufacturer: "Samsung",        model: "T7 Portable 1TB",    serial: "S5EVNF0R" + rand(), capacity: "1000" },
+    drive_external:     { manufacturer: "Seagate",        model: "Backup Plus 2TB",    serial: "NA" + rand(),       capacity: "2000" },
+  }
+  const drive = drives[deviceType] ?? { manufacturer: "Unknown", model: "Unknown", serial: "UNKNOWN001", capacity: "0" }
+  return {
+    drive_serial:       drive.serial,
+    drive_manufacturer: drive.manufacturer,
+    drive_model:        drive.model,
+    drive_capacity_gb:  drive.capacity,
+    wipe_tool_name:     "nwipe",
+    wipe_tool_version:  "0.36",
+  }
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
+const FAILURE_VALUES = ["fail", "drive_failed"]
+
 export default function DeviceDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -51,6 +84,9 @@ export default function DeviceDetail() {
   const [stepInputs, setStepInputs] = useState<Record<string, Record<string, string>>>({})
   const [wipeSimPhase, setWipeSimPhase] = useState<WipeSimPhase>("idle")
   const [failureAcknowledged, setFailureAcknowledged] = useState<Record<string, boolean>>({})
+  const [prefillPhase, setPrefillPhase] = useState<PrefillPhase>("idle")
+  const [apiData, setApiData] = useState<Record<string, string> | null>(null)
+  const [autofilledSteps, setAutofilledSteps] = useState<Set<string>>(new Set())
 
   useEffect(() => { loadDevice(true) }, [id])
 
@@ -72,15 +108,11 @@ export default function DeviceDetail() {
     }
   }
 
-  const FAILURE_VALUES = ["fail", "drive_failed"]
-
   const getStepFailure = (stepId: string, fields: InputField[] | null): string | null => {
     if (!fields) return null
     for (const field of fields) {
       const value = stepInputs[stepId]?.[field.name]
-      if (value && FAILURE_VALUES.includes(value.toLowerCase())) {
-        return field.label
-      }
+      if (value && FAILURE_VALUES.includes(value.toLowerCase())) return field.label
     }
     return null
   }
@@ -90,7 +122,6 @@ export default function DeviceDetail() {
       ...prev,
       [stepId]: { ...(prev[stepId] || {}), [fieldName]: value },
     }))
-    // Reset failure acknowledgment when input changes
     if (failureAcknowledged[stepId]) {
       setFailureAcknowledged((prev) => ({ ...prev, [stepId]: false }))
     }
@@ -98,8 +129,6 @@ export default function DeviceDetail() {
 
   const handleStepComplete = async (step: Step) => {
     if (!id || !device) return
-
-    // Validate required input fields
     if (step.input_fields) {
       for (const field of step.input_fields) {
         if (field.required && !stepInputs[step.id]?.[field.name]?.trim()) {
@@ -108,15 +137,10 @@ export default function DeviceDetail() {
         }
       }
     }
-
-    // Block if failure detected and not acknowledged
     const failureField = getStepFailure(step.id, step.input_fields)
-    if (failureField && !failureAcknowledged[step.id]) {
-      return
-    }
+    if (failureField && !failureAcknowledged[step.id]) return
 
     setError("")
-
     try {
       await api.patch(`/api/devices/${id}/step`, {
         step_id: step.id,
@@ -144,6 +168,34 @@ export default function DeviceDetail() {
     }, 2000)
   }
 
+  const startPrefill = (step: Step) => {
+    setPrefillPhase("connecting")
+    setTimeout(() => {
+      setPrefillPhase("reading")
+      setTimeout(() => {
+        const mock = getMockApiData(device?.device_type || "")
+        setApiData(mock)
+        const relevant: Record<string, string> = {}
+        for (const field of step.input_fields || []) {
+          if (mock[field.name] !== undefined) relevant[field.name] = mock[field.name]
+        }
+        setStepInputs((prev) => ({ ...prev, [step.id]: { ...(prev[step.id] || {}), ...relevant } }))
+        setAutofilledSteps((prev) => new Set(prev).add(step.id))
+        setPrefillPhase("complete")
+        setTimeout(() => setPrefillPhase("idle"), 800)
+      }, 2000)
+    }, 1500)
+  }
+
+  const quickPrefill = (step: Step, data: Record<string, string>) => {
+    const relevant: Record<string, string> = {}
+    for (const field of step.input_fields || []) {
+      if (data[field.name] !== undefined) relevant[field.name] = data[field.name]
+    }
+    setStepInputs((prev) => ({ ...prev, [step.id]: { ...(prev[step.id] || {}), ...relevant } }))
+    setAutofilledSteps((prev) => new Set(prev).add(step.id))
+  }
+
   const handleComplete = async () => {
     if (!id || completing) return
     try {
@@ -164,7 +216,6 @@ export default function DeviceDetail() {
   const isDocumented = device?.status === "documented"
   const canViewCompliance = isDocumented && Boolean(device?.comp_doc)
 
-  // Auto-complete when all steps are done
   useEffect(() => {
     if (allDone && !isDocumented && !completing && procedures.length > 0 && device) {
       handleComplete()
@@ -237,6 +288,7 @@ export default function DeviceDetail() {
             const stepFailure = isCurrentStep ? getStepFailure(step.id, step.input_fields) : null
             const hasFailure = !!stepFailure
             const acknowledged = failureAcknowledged[step.id] ?? false
+            const wasAutofilled = autofilledSteps.has(step.id)
 
             return (
               <div key={step.id} className="relative flex gap-6">
@@ -269,18 +321,16 @@ export default function DeviceDetail() {
                 {/* Card */}
                 <div className={`flex-1 pb-6 ${!isCompleted && !isCurrentStep ? "opacity-40" : ""}`}>
                   {isCurrentStep && !isCompleted ? (
-                    <div className={`bg-slate-900 border-l-4 ${
-                      hasFailure ? "border-red-600 border-red-600/20" : "border-orange-600 border-orange-600/20"
-                    } border p-8 rounded-xl shadow-xl ${
-                      hasFailure ? "shadow-red-900/10" : "shadow-orange-900/10"
+                    <div className={`bg-slate-900 border-l-4 border p-8 rounded-xl shadow-xl ${
+                      hasFailure
+                        ? "border-red-600 border-red-600/20 shadow-red-900/10"
+                        : "border-orange-600 border-orange-600/20 shadow-orange-900/10"
                     }`}>
                       <div className="flex justify-between items-start mb-6">
                         <div>
-                          <span className={`${
-                            hasFailure
-                              ? "bg-red-900/40 text-red-400"
-                              : "bg-orange-900/40 text-orange-400"
-                          } text-[10px] font-black uppercase px-2 py-0.5 rounded`}>
+                          <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
+                            hasFailure ? "bg-red-900/40 text-red-400" : "bg-orange-900/40 text-orange-400"
+                          }`}>
                             {hasFailure ? "Attention Required" : "Current Step"}
                           </span>
                           <h3 className="text-xl font-bold text-white mt-2" style={{ fontFamily: "Manrope, sans-serif" }}>{step.instruction}</h3>
@@ -289,16 +339,65 @@ export default function DeviceDetail() {
                         <span className="material-symbols-outlined text-slate-600 text-4xl">storage</span>
                       </div>
 
+                      {/* Prefill section */}
+                      {step.wipe_api_prefill && (
+                        <div className="mb-6">
+                          {apiData && prefillPhase === "idle" && !wasAutofilled && (
+                            <button
+                              onClick={() => quickPrefill(step, apiData)}
+                              className="w-full py-3 bg-blue-900/30 border border-blue-700 text-blue-300 rounded-xl font-bold hover:bg-blue-900/50 transition flex items-center justify-center gap-2 text-sm mb-4"
+                            >
+                              <span className="material-symbols-outlined text-blue-400">bolt</span>
+                              Auto-fill from Wipe Tool (already connected)
+                            </button>
+                          )}
+                          {!apiData && prefillPhase === "idle" && (
+                            <button
+                              onClick={() => startPrefill(step)}
+                              className="w-full py-3 bg-slate-800 border border-slate-600 text-slate-200 rounded-xl font-bold hover:bg-slate-700 transition flex items-center justify-center gap-2 text-sm mb-4"
+                            >
+                              <span className="material-symbols-outlined">wifi</span>
+                              Read Drive Info from Wipe Tool
+                            </button>
+                          )}
+                          {prefillPhase === "connecting" && (
+                            <div className="w-full py-3 bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center gap-3 text-slate-300 mb-4">
+                              <span className="material-symbols-outlined animate-spin">sync</span>
+                              <span className="text-sm font-bold">Connecting to wipe tool...</span>
+                            </div>
+                          )}
+                          {prefillPhase === "reading" && (
+                            <div className="w-full py-3 bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center gap-3 text-slate-300 mb-4">
+                              <span className="material-symbols-outlined animate-spin">sync</span>
+                              <span className="text-sm font-bold">Reading drive metadata...</span>
+                            </div>
+                          )}
+                          {(prefillPhase === "complete" || wasAutofilled) && (
+                            <div className="w-full py-3 bg-emerald-900/30 border border-emerald-700 rounded-xl flex items-center justify-center gap-3 text-emerald-300 mb-4">
+                              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                              <span className="text-sm font-bold">Drive info retrieved — fields auto-filled. Review and confirm.</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       {/* Input fields */}
                       {step.input_fields && step.input_fields.length > 0 && (
                         <div className="grid grid-cols-2 gap-4 mb-6">
                           {step.input_fields.map((field) => {
                             const fieldValue = stepInputs[step.id]?.[field.name] || ""
-                            const isFailedField = fieldValue && FAILURE_VALUES.includes(fieldValue.toLowerCase())
+                            const isFailedField = !!fieldValue && FAILURE_VALUES.includes(fieldValue.toLowerCase())
+                            const isAutofilled = wasAutofilled && apiData?.[field.name] !== undefined
                             return (
-                              <div key={field.name}>
-                                <label className="text-xs font-bold text-slate-300 uppercase tracking-wide block mb-1">
-                                  {field.label}{field.required && <span className="text-red-400 ml-1">*</span>}
+                              <div key={field.name} className="col-span-1">
+                                <label className="text-xs font-bold text-slate-300 uppercase tracking-wide flex items-center gap-2 mb-1">
+                                  {field.label}
+                                  {field.required && <span className="text-red-400">*</span>}
+                                  {isAutofilled && (
+                                    <span className="text-[10px] font-black bg-emerald-900/40 text-emerald-400 px-1.5 py-0.5 rounded uppercase tracking-wide">
+                                      Auto-filled
+                                    </span>
+                                  )}
                                 </label>
                                 {field.type === "select" ? (
                                   <select
@@ -319,8 +418,20 @@ export default function DeviceDetail() {
                                     value={fieldValue}
                                     onChange={(e) => handleInputChange(step.id, field.name, e.target.value)}
                                     placeholder={field.label}
-                                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 text-sm focus:ring-2 focus:ring-orange-600 outline-none"
+                                    className={`w-full rounded-lg px-3 py-2 text-slate-100 text-sm focus:ring-2 outline-none transition-colors ${
+                                      isFailedField
+                                        ? "bg-red-950 border-2 border-red-600 text-red-300 focus:ring-red-600"
+                                        : isAutofilled
+                                        ? "bg-slate-800 border border-emerald-700/60 focus:ring-orange-600"
+                                        : "bg-slate-800 border border-slate-700 focus:ring-orange-600"
+                                    }`}
                                   />
+                                )}
+                                {field.hint && !isAutofilled && (
+                                  <p className="text-xs text-slate-500 mt-1 leading-snug flex items-start gap-1">
+                                    <span className="material-symbols-outlined text-slate-600 shrink-0" style={{ fontSize: "13px", marginTop: "1px" }}>info</span>
+                                    {field.hint}
+                                  </p>
                                 )}
                               </div>
                             )
@@ -351,7 +462,12 @@ export default function DeviceDetail() {
                               Acknowledge &amp; Continue
                             </button>
                             <button
-                              onClick={() => handleInputChange(step.id, step.input_fields!.find(f => FAILURE_VALUES.includes((stepInputs[step.id]?.[f.name] || "").toLowerCase()))!.name, "")}
+                              onClick={() => {
+                                const failedField = step.input_fields?.find(
+                                  (f) => FAILURE_VALUES.includes((stepInputs[step.id]?.[f.name] || "").toLowerCase())
+                                )
+                                if (failedField) handleInputChange(step.id, failedField.name, "")
+                              }}
                               className="px-5 py-2.5 bg-slate-700 text-slate-200 text-sm font-bold rounded-lg hover:bg-slate-600 transition"
                             >
                               Change Selection
@@ -369,7 +485,7 @@ export default function DeviceDetail() {
                         </div>
                       )}
 
-                      {/* Wipe simulation or confirm */}
+                      {/* Wipe simulation or confirm button */}
                       {step.wipe_api_sim ? (
                         <div>
                           {wipeSimPhase === "idle" && (

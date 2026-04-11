@@ -51,6 +51,7 @@ def intake_device(body: DeviceIntakeRequest):
         "chassis_serial":   body.chassis_serial,
         "device_type":      body.device_type,
         "make_model":       body.make_model,
+        "os":               body.os or "",
         "intake_timestamp": now,
         "status":           "intake",
         "procedure_id":     procedure_id,

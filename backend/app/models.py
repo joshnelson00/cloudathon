@@ -38,6 +38,7 @@ class DeviceIntakeRequest(BaseModel):
     chassis_serial: str
     device_type: str
     make_model: str
+    os: Optional[str] = ""
 
 
 class DeviceIntakeResponse(BaseModel):
