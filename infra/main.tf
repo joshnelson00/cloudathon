@@ -40,19 +40,6 @@ data "aws_ami" "amazon_linux" {
   }
 }
 
-# Reference manually-created DynamoDB tables
-data "aws_dynamodb_table" "devices" {
-  name = "hackathon-dev-devices"
-}
-
-data "aws_dynamodb_table" "procedures" {
-  name = "hackathon-dev-procedures"
-}
-
-data "aws_dynamodb_table" "users" {
-  name = "hackathon-dev-users"
-}
-
 locals {
   prefix                 = "${var.project_name}-${var.environment}"
   bucket_name            = var.frontend_bucket_name != "" ? var.frontend_bucket_name : "${local.prefix}-frontend-${data.aws_caller_identity.current.account_id}"
@@ -402,8 +389,8 @@ resource "aws_iam_role_policy" "lambda_data_access" {
           "dynamodb:Scan"
         ]
         Resource = [
-          data.aws_dynamodb_table.devices.arn,
-          data.aws_dynamodb_table.procedures.arn
+          aws_dynamodb_table.devices.arn,
+          aws_dynamodb_table.procedures.arn
         ]
       },
       {
@@ -436,8 +423,8 @@ resource "aws_lambda_function" "compliance_doc_generator" {
 
   environment {
     variables = {
-      DEVICES_TABLE_NAME    = data.aws_dynamodb_table.devices.name
-      PROCEDURES_TABLE_NAME = data.aws_dynamodb_table.procedures.name
+      DEVICES_TABLE_NAME    = aws_dynamodb_table.devices.name
+      PROCEDURES_TABLE_NAME = aws_dynamodb_table.procedures.name
       COMPLIANCE_BUCKET     = aws_s3_bucket.compliance_docs.bucket
     }
   }
