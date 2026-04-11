@@ -186,7 +186,7 @@ export default function Dashboard() {
           )}
 
           <div className="px-6 py-4 bg-slate-800/20 flex justify-center border-t border-slate-800">
-            <button className="text-sm font-semibold text-slate-500 hover:text-orange-500 transition-colors">
+            <button onClick={() => navigate("/devices")} className="text-sm font-semibold text-slate-500 hover:text-orange-500 transition-colors">
               View All Devices
             </button>
           </div>
