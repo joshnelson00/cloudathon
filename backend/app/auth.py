@@ -224,3 +224,67 @@ def create_user(
             " (stored in DynamoDB)" if stored_in_db else " (stored locally)"
         ),
     )
+
+
+@router.post("/signup", response_model=UserCreateResponse)
+def signup(body: UserCreateRequest):
+    """
+    Self-service user signup (no authentication required).
+
+    Creates new user with 'worker' role by default.
+    Adds user to DynamoDB users table with hashed password.
+    Falls back to in-memory storage if DynamoDB is unavailable.
+    """
+    # Validate username is not already in use
+    if body.username in USERS or body.username in DB_USERS:
+        raise HTTPException(status_code=400, detail="Username already exists in system")
+
+    # Hash password and create user
+    user_id = str(uuid.uuid4())
+    hashed_password = pwd_context.hash(body.password)
+
+    # Force worker role for self-signup (can't create admin accounts)
+    item = {
+        "user_id": user_id,
+        "username": body.username,
+        "fname": body.fname,
+        "lname": body.lname,
+        "email": body.email,
+        "password": hashed_password,
+        "role": ["worker"],  # Self-signup always creates worker accounts
+    }
+
+    stored_in_db = False
+
+    # Try to store in DynamoDB
+    try:
+        table = get_users_table()
+
+        # Check if username already exists in DynamoDB
+        response = table.scan(
+            FilterExpression="username = :username",
+            ExpressionAttributeValues={":username": body.username}
+        )
+
+        if response["Items"]:
+            raise HTTPException(status_code=400, detail="Username already exists")
+
+        table.put_item(Item=item)
+        stored_in_db = True
+    except HTTPException:
+        raise
+    except Exception:
+        # If DynamoDB is unavailable, store in memory
+        DB_USERS[body.username] = item
+
+    return UserCreateResponse(
+        user_id=user_id,
+        username=body.username,
+        fname=body.fname,
+        lname=body.lname,
+        email=body.email,
+        role=["worker"],
+        message=f"Account created successfully! You can now login." + (
+            " (stored in DynamoDB)" if stored_in_db else " (stored locally)"
+        ),
+    )
