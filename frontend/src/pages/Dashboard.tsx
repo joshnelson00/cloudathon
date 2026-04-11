@@ -1,12 +1,6 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import {
-  FiBarChart2,
-  FiZap,
-  FiCheckCircle,
-  FiPlus,
-  FiSearch,
-} from "react-icons/fi"
+import type { AxiosError } from "axios"
 import { api } from "../api/client"
 import Layout from "../components/Layout"
 
@@ -19,13 +13,32 @@ interface DeviceStats {
 
 interface Device {
   device_id: string
-  chassis_serial: string
-  device_type: string
-  chassis_make_model: string
-  status: string
-  worker_id: string
-  intake_timestamp: string
+  chassis_serial?: string
+  device_type?: string
+  make_model?: string
+  chassis_make_model?: string
+  status?: string
+  worker_id?: string
+  intake_timestamp?: string
 }
+
+interface DeviceCreateResponse {
+  device_id: string
+  procedure_id: string
+  status: string
+}
+
+const DEVICE_TYPES = [
+  { value: "laptop_hdd", label: "Laptop HDD" },
+  { value: "laptop_ssd_sata", label: "Laptop SATA SSD" },
+  { value: "laptop_ssd_nvme", label: "Laptop NVMe SSD" },
+  { value: "desktop_hdd", label: "Desktop HDD" },
+  { value: "desktop_ssd", label: "Desktop SSD" },
+  { value: "tablet", label: "Tablet / Mobile" },
+  { value: "drive_external_hdd", label: "External HDD" },
+  { value: "drive_external_ssd", label: "External SSD" },
+  { value: "no_storage", label: "No Storage" },
+]
 
 const STATUS_CONFIG: Record<string, { color: string; label: string; dot: string }> = {
   intake:      { color: "bg-slate-800 text-slate-300",        dot: "bg-slate-400",   label: "Intake" },
@@ -54,6 +67,13 @@ export default function Dashboard() {
   const [stats, setStats] = useState<DeviceStats>({ total: 0, in_progress: 0, completed: 0, by_type: {} })
   const [devices, setDevices] = useState<Device[]>([])
   const [loading, setLoading] = useState(true)
+  const [addLoading, setAddLoading] = useState(false)
+  const [addError, setAddError] = useState("")
+  const [quickAdd, setQuickAdd] = useState({
+    chassis_serial: "",
+    device_type: "laptop_hdd",
+    make_model: "",
+  })
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -77,6 +97,47 @@ export default function Dashboard() {
 
   const completedPct = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0
   const inProgressPct = stats.total > 0 ? Math.round((stats.in_progress / stats.total) * 100) : 0
+
+  const handleQuickAddSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (addLoading) return
+
+    setAddError("")
+    setAddLoading(true)
+
+    try {
+      const response = await api.post<DeviceCreateResponse>("/api/devices", quickAdd)
+      const created = response.data
+      const now = new Date().toISOString()
+
+      const newDevice: Device = {
+        device_id: created.device_id,
+        chassis_serial: quickAdd.chassis_serial,
+        device_type: quickAdd.device_type,
+        make_model: quickAdd.make_model,
+        status: created.status || "intake",
+        worker_id: "",
+        intake_timestamp: now,
+      }
+
+      setDevices((prev) => [newDevice, ...prev])
+      setStats((prev) => ({
+        ...prev,
+        total: prev.total + 1,
+      }))
+      setQuickAdd({
+        chassis_serial: "",
+        device_type: "laptop_hdd",
+        make_model: "",
+      })
+      navigate(`/device/${created.device_id}`)
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ detail?: string }>
+      setAddError(err.response?.data?.detail || "Failed to add device. Please try again.")
+    } finally {
+      setAddLoading(false)
+    }
+  }
 
   return (
     <Layout>
@@ -158,18 +219,20 @@ export default function Dashboard() {
                 </thead>
                 <tbody className="divide-y divide-slate-800">
                   {devices.slice(0, 8).map((device) => {
-                    const cfg = STATUS_CONFIG[device.status] ?? STATUS_CONFIG.intake
-                    const icon = DEVICE_ICON[device.device_type] ?? "devices"
+                    const status = device.status || "intake"
+                    const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.intake
+                    const deviceType = device.device_type || "unknown"
+                    const icon = DEVICE_ICON[deviceType] ?? "devices"
                     return (
                       <tr key={device.device_id} className="hover:bg-slate-800/40 transition-colors">
-                        <td className="px-6 py-4 font-mono text-sm text-slate-200">{device.chassis_serial}</td>
+                        <td className="px-6 py-4 font-mono text-sm text-slate-200">{device.chassis_serial || "-"}</td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
                             <span className="material-symbols-outlined text-slate-400 text-lg">{icon}</span>
-                            <span className="text-sm font-medium text-slate-300">{device.device_type.replace(/_/g, " ")}</span>
+                            <span className="text-sm font-medium text-slate-300">{deviceType.replace(/_/g, " ")}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-sm text-slate-300">{device.chassis_make_model}</td>
+                        <td className="px-6 py-4 text-sm text-slate-300">{device.make_model || device.chassis_make_model || "-"}</td>
                         <td className="px-6 py-4">
                           <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${cfg.color}`}>
                             <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`}></span>
@@ -203,20 +266,69 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           <div className="lg:col-span-3 bg-slate-950 border border-slate-800 rounded-lg p-8 relative overflow-hidden group">
             <div className="relative z-10">
-              <h4 className="text-orange-500 font-bold uppercase tracking-widest text-xs mb-4">Quick Action</h4>
+              <h4 className="text-orange-500 font-bold uppercase tracking-widest text-xs mb-4">Quick Add</h4>
               <h3 className="text-2xl font-bold text-white mb-4" style={{ fontFamily: "Manrope, sans-serif" }}>
-                Start New Device Compliance Check
+                Add Device From Dashboard
               </h3>
               <p className="text-slate-400 mb-6 max-w-md text-sm leading-relaxed">
-                Begin the intake process for a new donated device. Ensure all serial numbers and hardware identifiers are verified.
+                Register a new device without leaving this page. It will immediately appear in the recent devices feed.
               </p>
-              <button
-                onClick={() => navigate("/intake")}
-                className="bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-8 rounded flex items-center gap-2 transition-all active:scale-95"
-              >
-                Launch Intake Module
-                <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
-              </button>
+
+              <form onSubmit={handleQuickAddSubmit} className="space-y-4 max-w-xl">
+                {addError && (
+                  <div className="p-3 bg-red-900/30 border border-red-700 rounded text-red-300 text-sm">
+                    {addError}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <input
+                    type="text"
+                    placeholder="Chassis Serial"
+                    value={quickAdd.chassis_serial}
+                    onChange={(e) => setQuickAdd((prev) => ({ ...prev, chassis_serial: e.target.value }))}
+                    required
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-orange-600 focus:border-orange-600 outline-none"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Make / Model"
+                    value={quickAdd.make_model}
+                    onChange={(e) => setQuickAdd((prev) => ({ ...prev, make_model: e.target.value }))}
+                    required
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-orange-600 focus:border-orange-600 outline-none"
+                  />
+                </div>
+
+                <div className="flex flex-col md:flex-row items-start md:items-center gap-3">
+                  <select
+                    value={quickAdd.device_type}
+                    onChange={(e) => setQuickAdd((prev) => ({ ...prev, device_type: e.target.value }))}
+                    className="w-full md:w-auto bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 focus:ring-2 focus:ring-orange-600 focus:border-orange-600 outline-none"
+                  >
+                    {DEVICE_TYPES.map((deviceType) => (
+                      <option key={deviceType.value} value={deviceType.value}>{deviceType.label}</option>
+                    ))}
+                  </select>
+
+                  <button
+                    type="submit"
+                    disabled={addLoading}
+                    className="bg-orange-600 hover:bg-orange-700 disabled:opacity-60 text-white font-bold py-2.5 px-6 rounded flex items-center gap-2 transition-all active:scale-95"
+                  >
+                    <span className="material-symbols-outlined text-base">add</span>
+                    {addLoading ? "Adding..." : "Add Device"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => navigate("/intake")}
+                    className="text-sm font-semibold text-slate-400 hover:text-orange-500 transition-colors"
+                  >
+                    Open full intake form
+                  </button>
+                </div>
+              </form>
             </div>
             <div className="absolute -right-8 -bottom-8 opacity-10 scale-150 rotate-12 group-hover:rotate-0 transition-transform duration-700 pointer-events-none">
               <span className="material-symbols-outlined text-[160px] text-white">inventory_2</span>
