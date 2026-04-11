@@ -11,8 +11,11 @@ Required certificate fields per NIST SP 800-88r2 §4.6:
   - Technician name, title, date, location, contact, signature
 """
 import io
+import json
+import logging
 import os
 from datetime import datetime, timezone
+from decimal import Decimal
 
 from reportlab.lib.pagesizes import LETTER
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -271,13 +274,58 @@ def _build_pdf_bytes(device: dict) -> bytes:
     return buffer.getvalue()
 
 
+# ── Lambda invocation ────────────────────────────────────────────────────────
+
+logger = logging.getLogger(__name__)
+
+
+def _decimal_default(obj):
+    if isinstance(obj, Decimal):
+        return int(obj) if obj == int(obj) else float(obj)
+    return str(obj)
+
+
+def _generate_via_lambda(device: dict) -> str:
+    """Invoke the compliance Lambda and return the S3 pre-signed URL."""
+    import boto3
+
+    client = boto3.client("lambda", region_name=settings.aws_region)
+    response = client.invoke(
+        FunctionName=settings.lambda_compliance_function_name,
+        InvocationType="RequestResponse",
+        Payload=json.dumps(device, default=_decimal_default),
+    )
+    payload = json.loads(response["Payload"].read())
+
+    if response.get("FunctionError"):
+        raise RuntimeError(f"Lambda error: {payload}")
+
+    body = payload if isinstance(payload.get("body"), dict) else {
+        **payload,
+        "body": json.loads(payload["body"]) if isinstance(payload.get("body"), str) else payload,
+    }
+    return body["body"]["pdf_url"]
+
+
 # ── Public entry point ────────────────────────────────────────────────────────
 
 def generate_compliance_pdf(device: dict) -> str:
     """
     Builds the PDF and uploads to S3 if a bucket is configured.
+    When running in AWS with a Lambda configured, delegates PDF generation
+    to the Lambda function. Falls back to local generation on error.
     Returns the S3 pre-signed URL, or the local download path if no bucket is set.
     """
+    # Delegate to Lambda if configured (AWS environment)
+    if settings.lambda_compliance_function_name:
+        try:
+            return _generate_via_lambda(device)
+        except Exception:
+            logger.exception(
+                "Lambda compliance PDF generation failed — falling back to local"
+            )
+
+    # Local / fallback path
     pdf_bytes = _build_pdf_bytes(device)
     device_id = device["device_id"]
     s3_key    = f"compliance-docs/{device_id}.pdf"

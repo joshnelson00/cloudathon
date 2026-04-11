@@ -192,6 +192,11 @@ resource "aws_iam_role_policy" "ec2_app_access" {
         Resource = [
           "${aws_s3_bucket.compliance_docs.arn}/*"
         ]
+      },
+      {
+        Effect = "Allow"
+        Action = ["lambda:InvokeFunction"]
+        Resource = [aws_lambda_function.compliance_doc_generator.arn]
       }
     ]
   })
@@ -411,6 +416,14 @@ data "archive_file" "compliance_doc_generator" {
   output_path = "${path.module}/.terraform/compliance_doc_generator.zip"
 }
 
+resource "aws_lambda_layer_version" "reportlab" {
+  filename            = "${path.module}/lambda/reportlab_layer.zip"
+  layer_name          = "${local.prefix}-reportlab"
+  compatible_runtimes = ["python3.12"]
+  description         = "reportlab library for PDF generation"
+  source_code_hash    = filebase64sha256("${path.module}/lambda/reportlab_layer.zip")
+}
+
 resource "aws_lambda_function" "compliance_doc_generator" {
   function_name    = local.compliance_lambda_name
   role             = aws_iam_role.lambda.arn
@@ -420,6 +433,7 @@ resource "aws_lambda_function" "compliance_doc_generator" {
   source_code_hash = data.archive_file.compliance_doc_generator.output_base64sha256
   timeout          = var.lambda_timeout_seconds
   memory_size      = var.lambda_memory_mb
+  layers           = [aws_lambda_layer_version.reportlab.arn]
 
   environment {
     variables = {

@@ -1,0 +1,4 @@
+* Connect DynamoDB to EC2 and ensure Deletion Flow works well (CRITICAL)
+* Make The Compliance Document Generator be migrated over to the lambda function (CRITICAL)
+* Outline and Create Presentation with all 5 people involved
+* Create Documentation for Solution

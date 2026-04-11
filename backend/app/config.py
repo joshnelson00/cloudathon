@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     dynamodb_procedures_table: str = "hackathon-dev-procedures"
     dynamodb_users_table: str = "hackathon-dev-users"
     s3_compliance_bucket: str = ""
+    lambda_compliance_function_name: str = ""
 
     jwt_secret_key: str = Field(default=..., description="JWT signing secret — must be set via JWT_SECRET_KEY env var")
     jwt_expire_minutes: int = 480
