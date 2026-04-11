@@ -7,6 +7,7 @@ const OPERATING_SYSTEMS = [
   { value: "linux",          label: "Linux" },
   { value: "macos_apple",    label: "macOS — Apple Silicon (M1/M2/M3/M4)" },
   { value: "macos_intel",    label: "macOS — Intel" },
+  { value: "bare_drive",     label: "I only have the drive — no OS to log into" },
 ]
 
 const DEVICE_CATEGORIES = [

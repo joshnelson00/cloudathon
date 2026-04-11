@@ -266,7 +266,7 @@ export default function DriveTypeIdentification() {
 
   const driveOptions = DRIVE_OPTIONS[device_category] || []
   const [driveType, setDriveType] = useState(driveOptions[0]?.value || "")
-  const [situation, setSituation] = useState<Situation>("os_access")
+  const [situation, setSituation] = useState<Situation>(os === "bare_drive" ? "bare_drive" : "os_access")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [customProcedures, setCustomProcedures] = useState<{ value: string; label: string }[]>([])
@@ -297,6 +297,7 @@ export default function DriveTypeIdentification() {
     linux:       "Linux",
     macos_apple: "macOS — Apple Silicon",
     macos_intel: "macOS — Intel",
+    bare_drive:  "Bare Drive / No OS",
   }
 
   const handleSubmit = async () => {
@@ -393,40 +394,52 @@ export default function DriveTypeIdentification() {
                   <span className="material-symbols-outlined text-orange-400">help</span>
                   What is your situation?
                 </h2>
-                <div className="space-y-2">
-                  {SITUATION_OPTIONS.map((opt) => (
-                    <label
-                      key={opt.value}
-                      className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${
-                        situation === opt.value
-                          ? "bg-orange-600/10 border-orange-600"
-                          : "bg-slate-900 border-slate-700 hover:border-slate-500"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="situation"
-                        value={opt.value}
-                        checked={situation === opt.value}
-                        onChange={() => setSituation(opt.value)}
-                        className="accent-orange-600 shrink-0"
-                      />
-                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
-                        situation === opt.value ? "bg-orange-600/20" : "bg-slate-800"
-                      }`}>
-                        <span className={`material-symbols-outlined text-lg ${
-                          situation === opt.value ? "text-orange-400" : "text-slate-400"
-                        }`}>{opt.icon}</span>
-                      </div>
-                      <div>
-                        <p className={`text-sm font-bold ${situation === opt.value ? "text-white" : "text-slate-300"}`}>
-                          {opt.label}
-                        </p>
-                        <p className="text-xs text-slate-500 mt-0.5">{opt.sub}</p>
-                      </div>
-                    </label>
-                  ))}
-                </div>
+                {os === "bare_drive" ? (
+                  <div className="flex items-center gap-4 p-4 rounded-xl border bg-orange-600/10 border-orange-600">
+                    <div className="w-9 h-9 rounded-lg bg-orange-600/20 flex items-center justify-center shrink-0">
+                      <span className="material-symbols-outlined text-lg text-orange-400">hard_drive</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-white">I only have the drive (removed from device)</p>
+                      <p className="text-xs text-slate-400 mt-0.5">Selected at intake — showing physical identification instructions below.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {SITUATION_OPTIONS.map((opt) => (
+                      <label
+                        key={opt.value}
+                        className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all ${
+                          situation === opt.value
+                            ? "bg-orange-600/10 border-orange-600"
+                            : "bg-slate-900 border-slate-700 hover:border-slate-500"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="situation"
+                          value={opt.value}
+                          checked={situation === opt.value}
+                          onChange={() => setSituation(opt.value)}
+                          className="accent-orange-600 shrink-0"
+                        />
+                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                          situation === opt.value ? "bg-orange-600/20" : "bg-slate-800"
+                        }`}>
+                          <span className={`material-symbols-outlined text-lg ${
+                            situation === opt.value ? "text-orange-400" : "text-slate-400"
+                          }`}>{opt.icon}</span>
+                        </div>
+                        <div>
+                          <p className={`text-sm font-bold ${situation === opt.value ? "text-white" : "text-slate-300"}`}>
+                            {opt.label}
+                          </p>
+                          <p className="text-xs text-slate-500 mt-0.5">{opt.sub}</p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
