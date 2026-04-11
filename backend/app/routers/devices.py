@@ -5,13 +5,15 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from ..auth import get_optional_user
+from ..auth import get_optional_user, require_admin
 from ..db import get_devices_table, get_procedures_table
 from ..models import (
     DeviceCompleteResponse,
     DeviceDetail,
     DeviceIntakeRequest,
     DeviceIntakeResponse,
+    ProcedureCreateRequest,
+    ProcedureCreateResponse,
     StepCompleteRequest,
     StepCompleteResponse,
 )
@@ -33,9 +35,21 @@ DEVICE_TYPE_TO_PROCEDURE = {
 }
 
 
+def _resolve_procedure_id(device_type: str) -> str | None:
+    """Return procedure_id for a device type — checks hardcoded map first, then DB."""
+    pid = DEVICE_TYPE_TO_PROCEDURE.get(device_type)
+    if pid:
+        return pid
+    result = get_procedures_table().scan()
+    for item in result.get("Items", []):
+        if item.get("device_type") == device_type:
+            return item["procedure_id"]
+    return None
+
+
 @router.post("/devices", response_model=DeviceIntakeResponse)
 def intake_device(body: DeviceIntakeRequest):
-    procedure_id = DEVICE_TYPE_TO_PROCEDURE.get(body.device_type)
+    procedure_id = _resolve_procedure_id(body.device_type)
     if not procedure_id:
         raise HTTPException(
             status_code=400,
@@ -56,8 +70,6 @@ def intake_device(body: DeviceIntakeRequest):
         "status":           "intake",
         "procedure_id":     procedure_id,
         "steps_completed":  [],
-        "comp_doc":         None,
-        "wipe_result":      None,
     }
 
     get_devices_table().put_item(Item=item)
@@ -224,6 +236,70 @@ def complete_step(
     )
 
 
+@router.get("/procedures")
+def list_procedures():
+    result = get_procedures_table().scan()
+    items = result.get("Items", [])
+    items.sort(key=lambda x: x.get("label", ""))
+    return {"procedures": items}
+
+
+@router.post("/procedures", response_model=ProcedureCreateResponse)
+def create_procedure(
+    body: ProcedureCreateRequest,
+):
+    # Derive a procedure_id from the device_type slug
+    base_id = body.device_type.strip().lower().replace(" ", "_") + "_custom_v1"
+    procedure_id = base_id
+
+    # If that ID already exists bump to _v2, _v3, …
+    existing = get_procedures_table().scan().get("Items", [])
+    taken = {item["procedure_id"] for item in existing}
+    if procedure_id in taken:
+        n = 2
+        while f"{body.device_type}_custom_v{n}" in taken:
+            n += 1
+        procedure_id = f"{body.device_type}_custom_v{n}"
+
+    # Also reject if this device_type already has a procedure
+    for item in existing:
+        if item.get("device_type") == body.device_type:
+            raise HTTPException(
+                status_code=400,
+                detail=f"A procedure for device type '{body.device_type}' already exists "
+                       f"(procedure_id: {item['procedure_id']}). Delete it first or use a different device type key.",
+            )
+
+    prefix = body.device_type[:6].replace("_", "")
+    steps = [
+        {
+            "id": f"{prefix}_{i + 1}",
+            "instruction": step.instruction,
+            "requires_confirmation": step.requires_confirmation,
+            "input_fields": None,
+        }
+        for i, step in enumerate(body.steps)
+    ]
+
+    item = {
+        "procedure_id":  procedure_id,
+        "device_type":   body.device_type,
+        "nist_method":   body.nist_method,
+        "nist_technique": body.nist_technique,
+        "label":         body.label,
+        "steps":         steps,
+    }
+
+    get_procedures_table().put_item(Item=item)
+
+    return ProcedureCreateResponse(
+        procedure_id=procedure_id,
+        device_type=body.device_type,
+        label=body.label,
+        message=f"Procedure '{body.label}' created for device type '{body.device_type}'.",
+    )
+
+
 @router.get("/procedures/{procedure_id}")
 def get_procedure(procedure_id: str):
     result = get_procedures_table().get_item(Key={"procedure_id": procedure_id})
@@ -231,6 +307,79 @@ def get_procedure(procedure_id: str):
     if not item:
         raise HTTPException(status_code=404, detail="Procedure not found")
     return item
+
+
+@router.put("/procedures/{procedure_id}", response_model=ProcedureCreateResponse)
+def update_procedure(
+    procedure_id: str,
+    body: ProcedureCreateRequest,
+):
+    table = get_procedures_table()
+    result = table.get_item(Key={"procedure_id": procedure_id})
+    item = result.get("Item")
+    if not item:
+        raise HTTPException(status_code=404, detail="Procedure not found")
+
+    # Check if device_type is being changed and if it already exists elsewhere
+    existing = table.scan().get("Items", [])
+    if body.device_type != item.get("device_type"):
+        for other in existing:
+            if other.get("device_type") == body.device_type and other.get("procedure_id") != procedure_id:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"A procedure for device type '{body.device_type}' already exists.",
+                )
+
+    prefix = body.device_type[:6].replace("_", "")
+    steps = [
+        {
+            "id": f"{prefix}_{i + 1}",
+            "instruction": step.instruction,
+            "requires_confirmation": step.requires_confirmation,
+            "input_fields": None,
+        }
+        for i, step in enumerate(body.steps)
+    ]
+
+    updated_item = {
+        "procedure_id": procedure_id,
+        "device_type": body.device_type,
+        "nist_method": body.nist_method,
+        "nist_technique": body.nist_technique,
+        "label": body.label,
+        "steps": steps,
+    }
+
+    table.put_item(Item=updated_item)
+
+    return ProcedureCreateResponse(
+        procedure_id=procedure_id,
+        device_type=body.device_type,
+        label=body.label,
+        message=f"Procedure '{body.label}' updated successfully.",
+    )
+
+
+@router.delete("/procedures/{procedure_id}")
+def delete_procedure(procedure_id: str):
+    table = get_procedures_table()
+    result = table.get_item(Key={"procedure_id": procedure_id})
+    item = result.get("Item")
+    if not item:
+        raise HTTPException(status_code=404, detail="Procedure not found")
+
+    # Check if any devices are using this procedure
+    devices_table = get_devices_table()
+    devices = devices_table.scan().get("Items", [])
+    in_use = [d for d in devices if d.get("procedure_id") == procedure_id]
+    if in_use:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot delete procedure '{procedure_id}' — {len(in_use)} device(s) are using it.",
+        )
+
+    table.delete_item(Key={"procedure_id": procedure_id})
+    return {"message": f"Procedure '{procedure_id}' deleted successfully."}
 
 
 def _get_full_user(username: str) -> dict:
