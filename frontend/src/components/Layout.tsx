@@ -59,7 +59,7 @@ export default function Layout({ children, showNav = true }: Readonly<LayoutProp
     { path: "/analytics", label: "AI Insights", icon: "insights" },
     { path: "/search", label: "Search Devices", icon: "search" },
     { path: "/intake", label: "Intake New Device", icon: "add_to_queue" },
-    ...(role === "admin" ? [{ path: "/admin", label: "Admin View", icon: "admin_panel_settings" }] : []),
+    { path: "/admin", label: "Admin Portal", icon: "admin_panel_settings" },
   ]
 
   if (!showNav) return <>{children}</>
