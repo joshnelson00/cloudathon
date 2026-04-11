@@ -7,6 +7,7 @@ from passlib.context import CryptContext
 from pydantic import BaseModel
 
 from .config import get_settings
+from .models import UserCreateRequest, UserCreateResponse
 
 settings = get_settings()
 
@@ -79,3 +80,20 @@ def logout():
 @router.get("/me")
 def me(user: dict = Depends(get_current_user)):
     return {"username": user["username"], "role": user["role"]}
+
+
+@router.post("/users", response_model=UserCreateResponse)
+def create_user(
+    body: UserCreateRequest,
+    user: dict = Depends(require_admin),
+):
+    """
+    Create a new user (admin only).
+
+    TODO: Implement user creation by:
+    1. Validate username is not already in USERS dict
+    2. Hash the password using pwd_context.hash()
+    3. Add new user to USERS dict with hashed password
+    4. Return success response
+    """
+    raise HTTPException(status_code=501, detail="User creation not yet implemented")

@@ -33,7 +33,21 @@ export default function Dashboard() {
   })
   const [devices, setDevices] = useState<Device[]>([])
   const [loading, setLoading] = useState(true)
+  const [userRole, setUserRole] = useState<string>("")
   const navigate = useNavigate()
+
+  useEffect(() => {
+    // Fetch current user to check if admin
+    const fetchUserRole = async () => {
+      try {
+        const response = await api.get("/auth/me")
+        setUserRole(response.data.role)
+      } catch (err) {
+        console.error("Failed to fetch user role:", err)
+      }
+    }
+    fetchUserRole()
+  }, [])
 
   useEffect(() => {
     loadDashboardData()
@@ -90,13 +104,24 @@ export default function Dashboard() {
             </h2>
             <p className="text-gray-600">CityServe Device Destruction System</p>
           </div>
-          <button
-            onClick={() => navigate("/intake")}
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition flex items-center gap-2"
-          >
-            <span>+</span>
-            Intake New Device
-          </button>
+          <div className="flex gap-3">
+            {userRole === "admin" && (
+              <button
+                onClick={() => navigate("/admin/users")}
+                className="bg-purple-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-purple-700 transition flex items-center gap-2"
+              >
+                <span>👥</span>
+                Manage Users
+              </button>
+            )}
+            <button
+              onClick={() => navigate("/intake")}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition flex items-center gap-2"
+            >
+              <span>+</span>
+              Intake New Device
+            </button>
+          </div>
         </section>
 
         {/* Stats Grid */}

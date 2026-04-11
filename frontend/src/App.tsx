@@ -5,6 +5,7 @@ import Dashboard from "./pages/Dashboard"
 import DeviceIntake from "./pages/DeviceIntake"
 import DeviceDetail from "./pages/DeviceDetail"
 import ComplianceRecord from "./pages/ComplianceRecord"
+import AdminUsers from "./pages/AdminUsers"
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem("token")
@@ -54,6 +55,14 @@ export default function App() {
           element={
             <PrivateRoute>
               <ComplianceRecord />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <PrivateRoute>
+              <AdminUsers />
             </PrivateRoute>
           }
         />

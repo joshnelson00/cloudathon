@@ -2,6 +2,20 @@ from typing import Optional
 from pydantic import BaseModel
 
 
+# ── User management ────────────────────────────────────────────────────────────
+
+class UserCreateRequest(BaseModel):
+    username: str
+    password: str
+    role: str = "worker"  # Default role is worker
+
+
+class UserCreateResponse(BaseModel):
+    username: str
+    role: str
+    message: str
+
+
 # ── Device intake ──────────────────────────────────────────────────────────────
 
 class DeviceIntakeRequest(BaseModel):
