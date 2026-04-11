@@ -17,9 +17,9 @@ const getBaseURL = (): string => {
       return "http://localhost:8000"
     }
 
-    // If running on a deployed domain, use same origin but with backend port
-    // This works if backend and frontend are on same EC2 instance
-    return `${protocol}//${hostname}:8000`
+    // If running on a deployed domain, API is routed through the same origin
+    // via CloudFront path behaviors (/api/*, /health) — no port needed
+    return `${protocol}//${hostname}`
   }
 
   // Fallback to localhost (shouldn't reach here in browser)

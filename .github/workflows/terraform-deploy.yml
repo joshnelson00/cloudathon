@@ -45,6 +45,7 @@ jobs:
     outputs:
       s3_bucket_name: ${{ steps.tfout.outputs.s3_bucket_name }}
       cloudfront_distribution_id: ${{ steps.tfout.outputs.cloudfront_distribution_id }}
+      cloudfront_url: ${{ steps.tfout.outputs.cloudfront_url }}
       ec2_instance_id: ${{ steps.tfout.outputs.ec2_instance_id }}
       ec2_public_ip: ${{ steps.tfout.outputs.ec2_public_ip }}
       lambda_compliance_function_name: ${{ steps.tfout.outputs.lambda_compliance_function_name }}
@@ -104,6 +105,7 @@ jobs:
         run: |
           echo "s3_bucket_name=$(terraform output -raw s3_bucket_name)" >> "$GITHUB_OUTPUT"
           echo "cloudfront_distribution_id=$(terraform output -raw cloudfront_distribution_id)" >> "$GITHUB_OUTPUT"
+          echo "cloudfront_url=$(terraform output -raw cloudfront_url)" >> "$GITHUB_OUTPUT"
           echo "ec2_instance_id=$(terraform output -raw ec2_instance_id)" >> "$GITHUB_OUTPUT"
           echo "ec2_public_ip=$(terraform output -raw ec2_public_ip)" >> "$GITHUB_OUTPUT"
           echo "lambda_compliance_function_name=$(terraform output -raw lambda_compliance_function_name)" >> "$GITHUB_OUTPUT"
@@ -226,7 +228,7 @@ jobs:
   frontend:
     runs-on: ubuntu-latest
     needs: [changes, infra]
-    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.frontend_changed == 'true'
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.frontend_changed == 'true' || needs.changes.outputs.infra_changed == 'true'
     steps:
       - uses: actions/checkout@v4
 
@@ -243,7 +245,7 @@ jobs:
       - name: Install and Build Frontend
         working-directory: frontend
         env:
-          VITE_API_URL: http://${{ needs.infra.outputs.ec2_public_ip }}:8000
+          VITE_API_URL: ${{ needs.infra.outputs.cloudfront_url }}
         run: |
           npm ci
           npm run build
