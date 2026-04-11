@@ -74,11 +74,27 @@ def list_devices():
 
 
 @router.get("/devices/search")
-def search_devices(q: str = ""):
-    """Search devices by type, serial, make/model, or status."""
+def search_devices(
+    q: str = "",
+    device_type: str = "",
+    status: str = "",
+    serial: str = "",
+    make_model: str = "",
+):
+    """
+    Search devices by keyword or specific filters.
+
+    Filters:
+    - q: keyword search across all fields (case-insensitive)
+    - device_type: filter by exact device type (e.g., "laptop_ssd")
+    - status: filter by exact status (e.g., "intake", "in_progress")
+    - serial: partial match on chassis serial
+    - make_model: partial match on make/model
+    """
     result = get_devices_table().scan()
     items = result.get("Items", [])
 
+    # Keyword search across all fields
     if q.strip():
         q_lower = q.lower()
         items = [
@@ -87,6 +103,36 @@ def search_devices(q: str = ""):
                 q_lower in item.get("chassis_serial", "").lower() or
                 q_lower in item.get("make_model", "").lower() or
                 q_lower in item.get("status", "").lower())
+        ]
+
+    # Filter by device type (exact match)
+    if device_type.strip():
+        items = [
+            item for item in items
+            if item.get("device_type", "").lower() == device_type.lower()
+        ]
+
+    # Filter by status (exact match)
+    if status.strip():
+        items = [
+            item for item in items
+            if item.get("status", "").lower() == status.lower()
+        ]
+
+    # Filter by serial (partial match)
+    if serial.strip():
+        serial_lower = serial.lower()
+        items = [
+            item for item in items
+            if serial_lower in item.get("chassis_serial", "").lower()
+        ]
+
+    # Filter by make/model (partial match)
+    if make_model.strip():
+        make_model_lower = make_model.lower()
+        items = [
+            item for item in items
+            if make_model_lower in item.get("make_model", "").lower()
         ]
 
     items.sort(key=lambda x: x.get("intake_timestamp", ""), reverse=True)
