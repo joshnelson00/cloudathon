@@ -46,6 +46,8 @@ jobs:
       s3_bucket_name: ${{ steps.tfout.outputs.s3_bucket_name }}
       cloudfront_distribution_id: ${{ steps.tfout.outputs.cloudfront_distribution_id }}
       ec2_instance_id: ${{ steps.tfout.outputs.ec2_instance_id }}
+      lambda_compliance_function_name: ${{ steps.tfout.outputs.lambda_compliance_function_name }}
+      compliance_bucket_name: ${{ steps.tfout.outputs.compliance_bucket_name }}
     steps:
       - uses: actions/checkout@v4
 
@@ -102,6 +104,8 @@ jobs:
           echo "s3_bucket_name=$(terraform output -raw s3_bucket_name)" >> "$GITHUB_OUTPUT"
           echo "cloudfront_distribution_id=$(terraform output -raw cloudfront_distribution_id)" >> "$GITHUB_OUTPUT"
           echo "ec2_instance_id=$(terraform output -raw ec2_instance_id)" >> "$GITHUB_OUTPUT"
+          echo "lambda_compliance_function_name=$(terraform output -raw lambda_compliance_function_name)" >> "$GITHUB_OUTPUT"
+          echo "compliance_bucket_name=$(terraform output -raw compliance_bucket_name)" >> "$GITHUB_OUTPUT"
 
   backend:
     runs-on: ubuntu-latest
@@ -151,6 +155,8 @@ jobs:
           instance_id="${{ needs.infra.outputs.ec2_instance_id }}"
           bucket="${{ needs.infra.outputs.s3_bucket_name }}"
           object_key="deployments/backend-${{ github.sha }}.tgz"
+          lambda_fn="${{ needs.infra.outputs.lambda_compliance_function_name }}"
+          compliance_bucket="${{ needs.infra.outputs.compliance_bucket_name }}"
 
           if [ -z "${JWT_SECRET_KEY:-}" ]; then
             echo "JWT_SECRET_KEY secret is not set in repository secrets" >&2
@@ -172,7 +178,9 @@ jobs:
               "tar -xzf backend.tgz -C backend",
               "jwt=\"\$(printf '%s' '${jwt_b64}' | base64 -d)\"",
               "printf 'ENVIRONMENT=production\\nPORT=8000\\nALLOWED_ORIGINS=*\\nSERVICE_ENDPOINTS_JSON={\"analytics\":\"\",\"notifications\":\"\",\"payments\":\"\"}\\nUSE_MOCK_DB=false\\n' > backend/.env",
-              "printf 'JWT_SECRET_KEY=%s\\n' \"\$jwt\" >> backend/.env",
+              "printf 'JWT_SECRET_KEY=%s\\n' \"\$existing_jwt\" >> backend/.env",
+              "printf 'LAMBDA_COMPLIANCE_FUNCTION_NAME=${lambda_fn}\\n' >> backend/.env",
+              "printf 'S3_COMPLIANCE_BUCKET=${compliance_bucket}\\n' >> backend/.env",
               "python3 -m venv /opt/hackathon/venv",
               "/opt/hackathon/venv/bin/pip install --upgrade pip",
               "/opt/hackathon/venv/bin/pip install -r /opt/hackathon/backend/requirements.txt",
