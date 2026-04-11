@@ -20,6 +20,14 @@ class Settings(BaseSettings):
     s3_compliance_bucket: str = ""
     lambda_compliance_function_name: str = ""
 
+    # Analytics configuration
+    analytics_mode: str = "backend"  # backend | athena
+    athena_enabled: bool = False
+    athena_database: str = ""
+    athena_table: str = ""
+    athena_workgroup: str = ""
+    athena_output_s3: str = ""
+
     jwt_secret_key: str = Field(default=..., description="JWT signing secret — must be set via JWT_SECRET_KEY env var")
     jwt_expire_minutes: int = 480
 

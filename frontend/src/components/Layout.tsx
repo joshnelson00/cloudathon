@@ -19,7 +19,7 @@ const DEVICE_TYPE_LABELS: Record<string, string> = {
   no_storage: "No Storage",
 }
 
-export default function Layout({ children, showNav = true }: LayoutProps) {
+export default function Layout({ children, showNav = true }: Readonly<LayoutProps>) {
   const navigate = useNavigate()
   const location = useLocation()
   const [notifOpen, setNotifOpen] = useState(false)
@@ -56,6 +56,7 @@ export default function Layout({ children, showNav = true }: LayoutProps) {
 
   const navLinks = [
     { path: "/", label: "Dashboard", icon: "dashboard" },
+    { path: "/analytics", label: "AI Insights", icon: "insights" },
     { path: "/search", label: "Search Devices", icon: "search" },
     { path: "/intake", label: "Intake New Device", icon: "add_to_queue" },
     ...(role === "admin" ? [{ path: "/admin", label: "Admin View", icon: "admin_panel_settings" }] : []),

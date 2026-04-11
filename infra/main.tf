@@ -44,7 +44,10 @@ locals {
   prefix                 = "${var.project_name}-${var.environment}"
   bucket_name            = var.frontend_bucket_name != "" ? var.frontend_bucket_name : "${local.prefix}-frontend-${data.aws_caller_identity.current.account_id}"
   compliance_bucket_name = var.compliance_bucket_name != "" ? var.compliance_bucket_name : "${local.prefix}-compliance-docs-${data.aws_caller_identity.current.account_id}"
+  athena_results_bucket_name = var.athena_results_bucket_name != "" ? var.athena_results_bucket_name : "${local.prefix}-athena-results-${data.aws_caller_identity.current.account_id}"
   compliance_lambda_name = var.lambda_compliance_function_name != "" ? var.lambda_compliance_function_name : "${local.prefix}-compliance-doc-generator"
+  athena_workgroup_name  = var.athena_workgroup_name != "" ? var.athena_workgroup_name : "${local.prefix}-analytics"
+  athena_database_name   = var.athena_database_name != "" ? var.athena_database_name : "${replace(local.prefix, "-", "_")}_analytics"
   devices_table_name     = var.dynamodb_devices_table_name != "" ? var.dynamodb_devices_table_name : "${local.prefix}-devices"
   procedures_table_name  = var.dynamodb_procedures_table_name != "" ? var.dynamodb_procedures_table_name : "${local.prefix}-procedures"
   users_table_name       = var.dynamodb_users_table_name != "" ? var.dynamodb_users_table_name : "${local.prefix}-users"
@@ -197,6 +200,42 @@ resource "aws_iam_role_policy" "ec2_app_access" {
         Effect = "Allow"
         Action = ["lambda:InvokeFunction"]
         Resource = [aws_lambda_function.compliance_doc_generator.arn]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "athena:StartQueryExecution",
+          "athena:GetQueryExecution",
+          "athena:GetQueryResults",
+          "athena:StopQueryExecution"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "glue:GetDatabase",
+          "glue:GetDatabases",
+          "glue:GetTable",
+          "glue:GetTables"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket"
+        ]
+        Resource = [aws_s3_bucket.athena_results.arn]
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ]
+        Resource = ["${aws_s3_bucket.athena_results.arn}/*"]
       }
     ]
   })
@@ -337,6 +376,35 @@ resource "aws_cloudfront_distribution" "frontend" {
 
 resource "aws_s3_bucket" "compliance_docs" {
   bucket = local.compliance_bucket_name
+}
+
+resource "aws_s3_bucket" "athena_results" {
+  bucket = local.athena_results_bucket_name
+}
+
+resource "aws_s3_bucket_public_access_block" "athena_results" {
+  bucket                  = aws_s3_bucket.athena_results.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_athena_workgroup" "analytics" {
+  name = local.athena_workgroup_name
+
+  configuration {
+    enforce_workgroup_configuration    = true
+    publish_cloudwatch_metrics_enabled = true
+
+    result_configuration {
+      output_location = "s3://${aws_s3_bucket.athena_results.bucket}/results/"
+    }
+  }
+}
+
+resource "aws_glue_catalog_database" "analytics" {
+  name = local.athena_database_name
 }
 
 resource "aws_s3_bucket_public_access_block" "compliance_docs" {
