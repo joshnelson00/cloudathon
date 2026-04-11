@@ -82,9 +82,22 @@ export default function Login() {
               </button>
             </form>
 
+            <div className="mt-6">
+              <button
+                type="button"
+                onClick={() => navigate("/admin/users")}
+                className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium transition"
+              >
+                Create New Account
+              </button>
+            </div>
+
             <div className="mt-8 pt-8 border-t border-gray-200">
+              <p className="text-xs text-gray-500 text-center mb-3">
+                Demo credentials: username: "worker1" | password: "password123"
+              </p>
               <p className="text-xs text-gray-500 text-center">
-                Demo credentials: username: "worker" | password: "test123"
+                Admin account: username: "admin" | password: "admin123"
               </p>
             </div>
           </div>
