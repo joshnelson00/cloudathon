@@ -277,13 +277,45 @@
     "wipe_tool_name": "hdparm",
     "wipe_tool_version": "1.0"
   },
-  "75d600c0-32b9-4319-a19e-c0b86238eeec": {
-    "device_id": "75d600c0-32b9-4319-a19e-c0b86238eeec",
-    "chassis_serial": "SNUM",
+  "aecba6bc-cbda-4f88-b92a-473350691af7": {
+    "device_id": "aecba6bc-cbda-4f88-b92a-473350691af7",
+    "chassis_serial": " heyo",
+    "device_type": "drive_external_ssd",
+    "make_model": "dell",
+    "intake_timestamp": "2026-04-11T03:57:47.417877+00:00",
+    "status": "in_progress",
+    "procedure_id": "external_ssd_purge_v1",
+    "steps_completed": [
+      {
+        "step_id": "extssd_1",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T03:57:48.712015+00:00"
+      }
+    ],
+    "comp_doc": null,
+    "wipe_result": null
+  },
+  "d06f87aa-7a3d-43cc-a52b-9b4ef5aed0ac": {
+    "device_id": "d06f87aa-7a3d-43cc-a52b-9b4ef5aed0ac",
+    "chassis_serial": "new device id serial",
     "device_type": "laptop_hdd",
-    "make_model": "Macbook AwesomeX",
-    "intake_timestamp": "2026-04-11T03:57:09.511923+00:00",
-    "status": "documented",
+    "make_model": "laptop 7",
+    "intake_timestamp": "2026-04-11T04:05:53.426382+00:00",
+    "status": "intake",
+    "procedure_id": "hdd_purge_v1",
+    "steps_completed": [],
+    "comp_doc": null,
+    "wipe_result": null
+  },
+  "b737e512-0afd-4c4d-908e-33601da4c425": {
+    "device_id": "b737e512-0afd-4c4d-908e-33601da4c425",
+    "chassis_serial": "cereal number",
+    "device_type": "laptop_hdd",
+    "make_model": "make & model",
+    "intake_timestamp": "2026-04-11T04:06:12.913997+00:00",
+    "status": "in_progress",
     "procedure_id": "hdd_purge_v1",
     "steps_completed": [
       {
