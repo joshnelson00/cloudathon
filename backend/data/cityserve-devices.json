@@ -596,5 +596,101 @@
     "verification_method": "m",
     "completed_by": "unknown",
     "completed_at": "2026-04-11T04:51:23.182082+00:00"
+  },
+  "8e7367f1-8122-4502-a854-a5af626f0c83": {
+    "device_id": "8e7367f1-8122-4502-a854-a5af626f0c83",
+    "chassis_serial": "sn1",
+    "device_type": "laptop_hdd",
+    "make_model": "Dell G15",
+    "intake_timestamp": "2026-04-11T05:11:06.060354+00:00",
+    "status": "documented",
+    "procedure_id": "hdd_purge_v1",
+    "steps_completed": [
+      {
+        "step_id": "hdd_1",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T05:11:09.240323+00:00"
+      },
+      {
+        "step_id": "hdd_2",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {
+          "drive_serial": "13",
+          "drive_model": "hdd",
+          "drive_manufacturer": "mac",
+          "drive_capacity_gb": "256"
+        },
+        "timestamp": "2026-04-11T05:11:23.537360+00:00"
+      },
+      {
+        "step_id": "hdd_3",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T05:11:31.819186+00:00"
+      },
+      {
+        "step_id": "hdd_4",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T05:11:33.436629+00:00"
+      },
+      {
+        "step_id": "hdd_5",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {
+          "wipe_tool_name": "tool",
+          "wipe_tool_version": "5.4"
+        },
+        "timestamp": "2026-04-11T05:11:39.203328+00:00"
+      },
+      {
+        "step_id": "hdd_6",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T05:11:46.606191+00:00"
+      },
+      {
+        "step_id": "hdd_7",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {
+          "wipe_result": "pass",
+          "verification_method": "tool"
+        },
+        "timestamp": "2026-04-11T05:11:58.353506+00:00"
+      },
+      {
+        "step_id": "hdd_8",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T05:12:00.403114+00:00"
+      },
+      {
+        "step_id": "hdd_9",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T05:12:03.169113+00:00"
+      }
+    ],
+    "comp_doc": "https://hackathon-dev-compliance-docs-412381748467.s3.amazonaws.com/compliance-docs/8e7367f1-8122-4502-a854-a5af626f0c83.pdf?AWSAccessKeyId=AKIAWAA66DTZ4Q5XZE5U&Signature=S5igQfk2X5UR3czZbNgqr92lSAg%3D&Expires=1775887929",
+    "wipe_result": true,
+    "drive_serial": "13",
+    "drive_model": "hdd",
+    "drive_manufacturer": "mac",
+    "drive_capacity_gb": "256",
+    "wipe_tool_name": "tool",
+    "wipe_tool_version": "5.4",
+    "verification_method": "tool",
+    "completed_by": "unknown",
+    "completed_at": "2026-04-11T05:12:07.204276+00:00"
   }
 }
