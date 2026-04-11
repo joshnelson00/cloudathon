@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from "react-router-dom"
 import {
   FiHome,
   FiPlus,
-  FiUsers,
   FiMenu,
   FiX,
 } from "react-icons/fi"
@@ -23,7 +22,6 @@ export default function Layout({ children, showNav = true }: LayoutProps) {
   const navItems = [
     { path: "/", label: "Dashboard", icon: FiHome },
     { path: "/intake", label: "Intake Device", icon: FiPlus },
-    { path: "/admin/users", label: "Manage Users", icon: FiUsers },
   ]
 
   return (
