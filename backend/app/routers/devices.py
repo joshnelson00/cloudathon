@@ -18,13 +18,15 @@ router = APIRouter()
 
 DEVICE_TYPE_TO_PROCEDURE = {
     "laptop_hdd":          "hdd_purge_v1",
-    "laptop_ssd":          "ssd_secure_erase_v1",
+    "laptop_ssd":          "sata_ssd_secure_erase_v1",
+    "laptop_ssd_sata":     "sata_ssd_secure_erase_v1",
+    "laptop_ssd_nvme":     "nvme_ssd_format_v1",
     "desktop_hdd":         "hdd_purge_v1",
-    "desktop_ssd":         "ssd_secure_erase_v1",
+    "desktop_ssd":         "sata_ssd_secure_erase_v1",
     "tablet":              "tablet_factory_reset_v1",
-    "drive_external":      "hdd_purge_v1",
-    "drive_external_hdd":  "hdd_purge_v1",
-    "drive_external_ssd":  "ssd_secure_erase_v1",
+    "drive_external":      "external_hdd_purge_v1",
+    "drive_external_hdd":  "external_hdd_purge_v1",
+    "drive_external_ssd":  "external_ssd_purge_v1",
     "no_storage":          "no_storage_clear_v1",
 }
 
