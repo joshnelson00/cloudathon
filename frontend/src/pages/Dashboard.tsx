@@ -1,5 +1,12 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
+import {
+  FiBarChart2,
+  FiZap,
+  FiCheckCircle,
+  FiUsers,
+  FiPlus,
+} from "react-icons/fi"
 import { api } from "../api/client"
 import Layout from "../components/Layout"
 
@@ -110,7 +117,7 @@ export default function Dashboard() {
                 onClick={() => navigate("/admin/users")}
                 className="bg-purple-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-purple-700 transition flex items-center gap-2"
               >
-                <span>👥</span>
+                <FiUsers className="w-5 h-5" />
                 Manage Users
               </button>
             )}
@@ -118,7 +125,7 @@ export default function Dashboard() {
               onClick={() => navigate("/intake")}
               className="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition flex items-center gap-2"
             >
-              <span>+</span>
+              <FiPlus className="w-5 h-5" />
               Intake New Device
             </button>
           </div>
@@ -131,7 +138,7 @@ export default function Dashboard() {
               <p className="text-xs font-bold uppercase text-gray-600 tracking-wide">
                 Total Devices
               </p>
-              <span className="text-2xl text-blue-600">📊</span>
+              <FiBarChart2 className="text-2xl text-blue-600" />
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-4xl font-bold text-gray-900">
@@ -148,7 +155,7 @@ export default function Dashboard() {
               <p className="text-xs font-bold uppercase text-gray-600 tracking-wide">
                 In-Progress
               </p>
-              <span className="text-2xl">⚙️</span>
+              <FiZap className="text-2xl text-amber-600" />
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-4xl font-bold text-gray-900">
@@ -175,15 +182,15 @@ export default function Dashboard() {
               <p className="text-xs font-bold uppercase text-gray-600 tracking-wide">
                 Completed
               </p>
-              <span className="text-2xl">✅</span>
+              <FiCheckCircle className="text-2xl text-green-600" />
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-4xl font-bold text-gray-900">
-                {stats.completed}
+                {stats.documented}
               </span>
               <span className="text-green-600 font-bold text-sm">
                 {stats.total > 0
-                  ? `${Math.round((stats.completed / stats.total) * 100)}%`
+                  ? `${Math.round((stats.documented / stats.total) * 100)}%`
                   : "0%"}
               </span>
             </div>
