@@ -22,5 +22,17 @@
     "steps_completed": [],
     "comp_doc": null,
     "wipe_result": null
+  },
+  "4587f9e4-57b2-4a1a-964e-68bbb391f14a": {
+    "device_id": "4587f9e4-57b2-4a1a-964e-68bbb391f14a",
+    "chassis_serial": "S1XS3V3N",
+    "device_type": "laptop_hdd",
+    "make_model": "Macbook AwesomeX",
+    "intake_timestamp": "2026-04-11T02:45:03.196737+00:00",
+    "status": "intake",
+    "procedure_id": "hdd_purge_v1",
+    "steps_completed": [],
+    "comp_doc": null,
+    "wipe_result": null
   }
 }
