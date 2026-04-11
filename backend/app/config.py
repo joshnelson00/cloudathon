@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     dynamodb_users_table: str = "cityserve-users"
     s3_compliance_bucket: str = ""
 
-    jwt_secret_key: str = "hackathon-secret-key-change-in-prod"
+    jwt_secret_key: str = Field(default=..., description="JWT signing secret — must be set via JWT_SECRET_KEY env var")
     jwt_expire_minutes: int = 480
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
