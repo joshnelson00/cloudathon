@@ -70,8 +70,6 @@ def intake_device(body: DeviceIntakeRequest):
         "status":           "intake",
         "procedure_id":     procedure_id,
         "steps_completed":  [],
-        "comp_doc":         None,
-        "wipe_result":      None,
     }
 
     get_devices_table().put_item(Item=item)
