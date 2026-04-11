@@ -31,6 +31,8 @@ jobs:
           pip install -r backend/requirements.txt
 
       - name: Run API health smoke check
+        env:
+          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
         run: |
           cd backend
           python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 &
