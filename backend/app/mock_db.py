@@ -59,8 +59,12 @@ class MockTable:
     def put_item(self, Item: dict):
         """Put an item (insert or update)."""
         data = self._read_data()
-        # Use the first non-None ID field as the key
-        key_field = "device_id" if "device_id" in Item else "procedure_id"
+        # Determine key field by checking common ID fields
+        for key_field in ("device_id", "procedure_id", "user_id"):
+            if key_field in Item:
+                break
+        else:
+            key_field = next(iter(Item))  # fallback to first field
         item_id = str(Item[key_field])
         data[item_id] = Item
         self._write_data(data)

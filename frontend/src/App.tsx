@@ -9,6 +9,8 @@ import AllDevices from "./pages/AllDevices"
 import Analytics from "./pages/Analytics"
 import AdminDashboard from "./pages/AdminDashboard"
 import DriveTypeIdentification from "./pages/DriveTypeIdentification"
+import Login from "./pages/Login"
+import SignUp from "./pages/SignUp"
 
 export default function App() {
   const [ready, setReady] = useState(false)
@@ -32,6 +34,8 @@ export default function App() {
         <Route path="/compliance/:id" element={<ComplianceRecord />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/identify-drive" element={<DriveTypeIdentification />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<SignUp />} />
       </Routes>
     </Router>
   )

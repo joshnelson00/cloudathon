@@ -20,6 +20,16 @@ export default function Login() {
     try {
       const response = await api.post("/auth/login", { username, password })
       localStorage.setItem("token", response.data.access_token)
+      // Fetch user profile to get role and display name
+      try {
+        const me = await api.get("/auth/me")
+        const roles: string[] = Array.isArray(me.data.role) ? me.data.role : [me.data.role]
+        localStorage.setItem("role", roles[0] || "worker")
+        localStorage.setItem("username", me.data.username || username)
+      } catch {
+        localStorage.setItem("role", "worker")
+        localStorage.setItem("username", username)
+      }
       navigate("/")
     } catch (err: any) {
       setError(err.response?.data?.detail || "Login failed. Please try again.")
