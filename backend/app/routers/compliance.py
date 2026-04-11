@@ -1,7 +1,9 @@
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import RedirectResponse
+import os
 
-from ..db import get_devices_table, get_s3
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse
+
+from ..db import get_devices_table
 from ..models import ComplianceResponse, DashboardResponse
 from ..config import get_settings
 
@@ -16,8 +18,8 @@ def get_compliance(device_id: str):
     if not item:
         raise HTTPException(status_code=404, detail="Device not found")
 
-    url = item.get("comp_doc")
-    if not url:
+    comp_doc = item.get("comp_doc")
+    if not comp_doc:
         raise HTTPException(
             status_code=404,
             detail="Compliance document not yet generated. Complete all steps first.",
@@ -25,8 +27,21 @@ def get_compliance(device_id: str):
 
     return ComplianceResponse(
         device_id=device_id,
-        comp_doc=url,
+        comp_doc=comp_doc,
         generated_at=item.get("intake_timestamp"),
+    )
+
+
+@router.get("/compliance/{device_id}/download")
+def download_compliance_pdf(device_id: str):
+    """Serve the PDF from local /tmp storage (used when S3 bucket is not configured)."""
+    path = f"/tmp/{device_id}.pdf"
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="PDF not found. Generate the certificate first.")
+    return FileResponse(
+        path,
+        media_type="application/pdf",
+        filename=f"compliance-{device_id}.pdf",
     )
 
 

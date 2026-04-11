@@ -113,5 +113,168 @@
     "drive_manufacturer": "Apple",
     "drive_capacity_gb": "244",
     "drive_model": "Iphone12 PRO"
+  },
+  "99f61e78-ccf6-4727-ac1e-e80fa611b0cf": {
+    "device_id": "99f61e78-ccf6-4727-ac1e-e80fa611b0cf",
+    "chassis_serial": "test1",
+    "device_type": "laptop_hdd",
+    "make_model": "Macboook",
+    "intake_timestamp": "2026-04-11T03:18:35.077418+00:00",
+    "status": "documented",
+    "procedure_id": "hdd_purge_v1",
+    "steps_completed": [
+      {
+        "step_id": "hdd_1",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T03:18:42.814323+00:00"
+      },
+      {
+        "step_id": "hdd_2",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {
+          "drive_serial": "12345",
+          "drive_manufacturer": "Apple",
+          "drive_model": "hdd",
+          "drive_capacity_gb": "256"
+        },
+        "timestamp": "2026-04-11T03:20:17.411300+00:00"
+      },
+      {
+        "step_id": "hdd_3",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T03:20:25.125715+00:00"
+      },
+      {
+        "step_id": "hdd_4",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T03:20:31.792164+00:00"
+      },
+      {
+        "step_id": "hdd_5",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {
+          "wipe_tool_name": "tool1",
+          "wipe_tool_version": "1.0"
+        },
+        "timestamp": "2026-04-11T03:20:42.245231+00:00"
+      },
+      {
+        "step_id": "hdd_6",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T03:20:52.427762+00:00"
+      },
+      {
+        "step_id": "hdd_7",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {
+          "wipe_result": "pass"
+        },
+        "timestamp": "2026-04-11T03:20:57.374807+00:00"
+      },
+      {
+        "step_id": "hdd_8",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T03:21:04.708213+00:00"
+      },
+      {
+        "step_id": "hdd_9",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T03:21:08.091712+00:00"
+      }
+    ],
+    "comp_doc": "/api/compliance/99f61e78-ccf6-4727-ac1e-e80fa611b0cf/download",
+    "wipe_result": true,
+    "drive_serial": "12345",
+    "drive_manufacturer": "Apple",
+    "drive_model": "hdd",
+    "drive_capacity_gb": "256",
+    "wipe_tool_name": "tool1",
+    "wipe_tool_version": "1.0"
+  },
+  "b800b93e-c87e-4898-bc04-e5346b9a00eb": {
+    "device_id": "b800b93e-c87e-4898-bc04-e5346b9a00eb",
+    "chassis_serial": "SN-1234-56",
+    "device_type": "drive_external_ssd",
+    "make_model": "Dell G15",
+    "intake_timestamp": "2026-04-11T03:31:55.126769+00:00",
+    "status": "documented",
+    "procedure_id": "external_ssd_purge_v1",
+    "steps_completed": [
+      {
+        "step_id": "extssd_1",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T03:32:00.880838+00:00"
+      },
+      {
+        "step_id": "extssd_2",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {
+          "drive_serial": "1t76384",
+          "drive_model": "model",
+          "drive_manufacturer": "apple",
+          "drive_capacity_gb": "256"
+        },
+        "timestamp": "2026-04-11T03:32:10.359580+00:00"
+      },
+      {
+        "step_id": "extssd_3",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {
+          "wipe_tool_name": "hdparm",
+          "wipe_tool_version": "1.0"
+        },
+        "timestamp": "2026-04-11T03:32:22.393247+00:00"
+      },
+      {
+        "step_id": "extssd_4",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T03:32:44.174932+00:00"
+      },
+      {
+        "step_id": "extssd_5",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {
+          "wipe_result": "pass"
+        },
+        "timestamp": "2026-04-11T03:33:09.409789+00:00"
+      },
+      {
+        "step_id": "extssd_6",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T03:33:12.158429+00:00"
+      }
+    ],
+    "comp_doc": "/api/compliance/b800b93e-c87e-4898-bc04-e5346b9a00eb/download",
+    "wipe_result": true,
+    "drive_serial": "1t76384",
+    "drive_model": "model",
+    "drive_manufacturer": "apple",
+    "drive_capacity_gb": "256",
+    "wipe_tool_name": "hdparm",
+    "wipe_tool_version": "1.0"
   }
 }
