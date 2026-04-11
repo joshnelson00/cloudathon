@@ -28,7 +28,7 @@ def get_compliance(device_id: str):
     return ComplianceResponse(
         device_id=device_id,
         comp_doc=comp_doc,
-        generated_at=item.get("intake_timestamp"),
+        generated_at=item.get("completed_at") or item.get("intake_timestamp"),
     )
 
 
@@ -67,5 +67,6 @@ def dashboard():
         in_progress=counts["in_progress"],
         verified=counts["verified"],
         documented=counts["documented"],
+        completed=counts["documented"],
         by_type=by_type,
     )
