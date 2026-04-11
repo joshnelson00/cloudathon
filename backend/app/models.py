@@ -78,6 +78,28 @@ class Procedure(BaseModel):
     steps: list[ProcedureStep]
 
 
+# ── Procedure management ───────────────────────────────────────────────────────
+
+class ProcedureStepCreate(BaseModel):
+    instruction: str
+    requires_confirmation: bool = True
+
+
+class ProcedureCreateRequest(BaseModel):
+    label: str
+    device_type: str          # e.g. "phone_android" — used as intake key
+    nist_method: str          # e.g. "Purge", "Clear", "Destroy"
+    nist_technique: str = ""  # e.g. "Overwrite"
+    steps: list[ProcedureStepCreate]
+
+
+class ProcedureCreateResponse(BaseModel):
+    procedure_id: str
+    device_type: str
+    label: str
+    message: str
+
+
 class DeviceDetail(BaseModel):
     device_id: str
     chassis_serial: str

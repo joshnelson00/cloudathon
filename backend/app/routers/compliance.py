@@ -1,15 +1,67 @@
 import os
 from datetime import datetime, timezone
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse
+from fastapi.responses import RedirectResponse
 
+from ..db import get_s3
 from ..db import get_devices_table
 from ..models import ComplianceResponse, DashboardResponse
 from ..config import get_settings
 
 settings = get_settings()
 router = APIRouter()
+
+
+def _canonical_download_path(device_id: str) -> str:
+    return f"/api/compliance/{device_id}/download"
+
+
+def _default_s3_key(device_id: str) -> str:
+    return f"compliance-docs/{device_id}.pdf"
+
+
+def _extract_s3_key(comp_doc: str | None, device_id: str) -> str:
+    if not comp_doc:
+        return _default_s3_key(device_id)
+
+    if comp_doc.startswith("s3://"):
+        without_scheme = comp_doc[5:]
+        key = without_scheme.split("/", 1)[1] if "/" in without_scheme else ""
+        return key or _default_s3_key(device_id)
+
+    if comp_doc.startswith("http://") or comp_doc.startswith("https://"):
+        parsed = urlparse(comp_doc)
+        path = parsed.path.lstrip("/")
+        if not path:
+            return _default_s3_key(device_id)
+
+        # Path-style URL: https://s3.amazonaws.com/<bucket>/<key>
+        if parsed.netloc.startswith("s3.") or parsed.netloc == "s3.amazonaws.com":
+            bucket = settings.s3_compliance_bucket
+            if bucket and path.startswith(f"{bucket}/"):
+                return path[len(bucket) + 1 :]
+
+        # Virtual-host style URL: https://<bucket>.s3.amazonaws.com/<key>
+        return path
+
+    if comp_doc.startswith("/api/compliance/"):
+        return _default_s3_key(device_id)
+
+    if comp_doc.endswith(".pdf") and "/" in comp_doc:
+        return comp_doc.lstrip("/")
+
+    return _default_s3_key(device_id)
+
+
+def _s3_object_exists(bucket: str, key: str) -> bool:
+    try:
+        get_s3().head_object(Bucket=bucket, Key=key)
+        return True
+    except Exception:
+        return False
 
 
 @router.get("/compliance/{device_id}", response_model=ComplianceResponse)
@@ -20,7 +72,18 @@ def get_compliance(device_id: str):
         raise HTTPException(status_code=404, detail="Device not found")
 
     comp_doc = item.get("comp_doc")
-    if not comp_doc:
+    if settings.s3_compliance_bucket:
+        bucket = settings.s3_compliance_bucket
+        s3_key = _extract_s3_key(comp_doc, device_id)
+        fallback_key = _default_s3_key(device_id)
+        has_s3_object = _s3_object_exists(bucket, s3_key) or _s3_object_exists(bucket, fallback_key)
+        if not has_s3_object:
+            raise HTTPException(
+                status_code=404,
+                detail="Compliance document not yet generated. Complete all steps first.",
+            )
+        comp_doc = _canonical_download_path(device_id)
+    elif not comp_doc:
         raise HTTPException(
             status_code=404,
             detail="Compliance document not yet generated. Complete all steps first.",
@@ -35,7 +98,27 @@ def get_compliance(device_id: str):
 
 @router.get("/compliance/{device_id}/download")
 def download_compliance_pdf(device_id: str):
-    """Serve the PDF from local /tmp storage (used when S3 bucket is not configured)."""
+    """Serve PDF using local file fallback or a fresh S3 presigned URL."""
+    item = get_devices_table().get_item(Key={"device_id": device_id}).get("Item")
+    if not item:
+        raise HTTPException(status_code=404, detail="Device not found")
+
+    if settings.s3_compliance_bucket:
+        bucket = settings.s3_compliance_bucket
+        stored_doc = item.get("comp_doc")
+        primary_key = _extract_s3_key(stored_doc, device_id)
+        fallback_key = _default_s3_key(device_id)
+        for key in [primary_key, fallback_key]:
+            if key and _s3_object_exists(bucket, key):
+                url = get_s3().generate_presigned_url(
+                    "get_object",
+                    Params={"Bucket": bucket, "Key": key},
+                    ExpiresIn=86400,
+                )
+                return RedirectResponse(url=url, status_code=307)
+
+        raise HTTPException(status_code=404, detail="PDF not found. Generate the certificate first.")
+
     path = f"/tmp/{device_id}.pdf"
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="PDF not found. Generate the certificate first.")
