@@ -82,7 +82,6 @@ class DeviceDetail(BaseModel):
     device_type: str
     make_model: str
     intake_timestamp: str
-    user_id: str
     status: str
     procedure_id: str
     wipe_result: Optional[bool] = None

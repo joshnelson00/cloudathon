@@ -22,7 +22,6 @@ interface Device {
   device_type: string
   make_model: string
   status: string
-  worker_id: string
   procedure_id: string
   steps_completed: CompletedStep[]
 }

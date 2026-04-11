@@ -1,7 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import RedirectResponse
 
-from ..auth import get_current_user
 from ..db import get_devices_table, get_s3
 from ..models import ComplianceResponse, DashboardResponse
 from ..config import get_settings
@@ -11,7 +10,7 @@ router = APIRouter()
 
 
 @router.get("/compliance/{device_id}", response_model=ComplianceResponse)
-def get_compliance(device_id: str, user: dict = Depends(get_current_user)):
+def get_compliance(device_id: str):
     result = get_devices_table().get_item(Key={"device_id": device_id})
     item = result.get("Item")
     if not item:
@@ -32,7 +31,7 @@ def get_compliance(device_id: str, user: dict = Depends(get_current_user)):
 
 
 @router.get("/dashboard", response_model=DashboardResponse)
-def dashboard(user: dict = Depends(get_current_user)):
+def dashboard():
     result = get_devices_table().scan()
     items = result.get("Items", [])
 

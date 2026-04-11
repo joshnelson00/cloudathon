@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from "react-router-dom"
 import {
   FiHome,
   FiPlus,
-  FiLogOut,
   FiUsers,
   FiMenu,
   FiX,
@@ -18,11 +17,6 @@ export default function Layout({ children, showNav = true }: LayoutProps) {
   const navigate = useNavigate()
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(true)
-
-  const handleLogout = () => {
-    localStorage.removeItem("token")
-    navigate("/login")
-  }
 
   const isActive = (path: string) => location.pathname === path
 
@@ -80,17 +74,6 @@ export default function Layout({ children, showNav = true }: LayoutProps) {
             ))}
           </nav>
 
-          {/* Logout Button */}
-          <div className="p-3 border-t border-gray-200">
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-4 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition font-medium"
-              title="Logout"
-            >
-              <FiLogOut className="w-5 h-5 flex-shrink-0" />
-              {sidebarOpen && <span>Logout</span>}
-            </button>
-          </div>
         </aside>
       )}
 
