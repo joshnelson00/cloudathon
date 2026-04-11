@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
+import confetti from "canvas-confetti"
 import { api } from "../api/client"
 import Layout from "../components/Layout"
 
@@ -19,7 +20,12 @@ export default function ComplianceRecord() {
   useEffect(() => {
     if (!id) return
     api.get(`/api/compliance/${id}`)
-      .then((res) => setData(res.data))
+      .then((res) => {
+        setData(res.data)
+        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors: ["#ea580c", "#10b981", "#ffffff"] })
+        setTimeout(() => confetti({ particleCount: 60, spread: 120, origin: { y: 0.5, x: 0.2 }, colors: ["#ea580c", "#f97316"] }), 300)
+        setTimeout(() => confetti({ particleCount: 60, spread: 120, origin: { y: 0.5, x: 0.8 }, colors: ["#10b981", "#34d399"] }), 500)
+      })
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [id])
