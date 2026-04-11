@@ -8,7 +8,15 @@
       "Bash('/c/Program Files/Amazon/AWSCLIV2/aws.exe' dynamodb list-tables)",
       "Bash('/c/Program Files/Amazon/AWSCLIV2/aws.exe' configure get region)",
       "Bash(terraform version:*)",
-      "Read(//c/Program Files//**)"
+      "Read(//c/Program Files//**)",
+      "Bash(curl -s http://localhost:8000/health)",
+      "Bash(curl -s http://localhost:8000/api/devices)",
+      "Bash(curl:*)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(f'procedure_id={d[\\\\\"procedure_id\\\\\"]}, steps={len\\(d[\\\\\"steps\\\\\"]\\)}'\\)\")",
+      "Bash(kill 30261)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(f'{k}: status={v.get\\(\\\\\"status\\\\\"\\)}'\\) for k,v in d.items\\(\\)]\")",
+      "Bash(npx tsc:*)",
+      "Bash(npx vite:*)"
     ]
   }
 }

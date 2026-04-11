@@ -50,12 +50,12 @@ export default function DeviceDetail() {
   const [stepInputs, setStepInputs] = useState<Record<string, Record<string, string>>>({})
   const [wipeSimPhase, setWipeSimPhase] = useState<WipeSimPhase>("idle")
 
-  useEffect(() => { loadDevice() }, [id])
+  useEffect(() => { loadDevice(true) }, [id])
 
-  const loadDevice = async () => {
+  const loadDevice = async (showLoader = false) => {
     if (!id) return
     try {
-      setLoading(true)
+      if (showLoader) setLoading(true)
       const deviceRes = await api.get(`/api/devices/${id}`)
       const deviceData = deviceRes.data as Device
       setDevice(deviceData)
@@ -119,16 +119,30 @@ export default function DeviceDetail() {
   }
 
   const handleComplete = async () => {
-    if (!id) return
+    if (!id || completing) return
     try {
       setCompleting(true)
       await api.post(`/api/devices/${id}/complete`)
-      navigate(`/compliance/${id}`)
+      await loadDevice()
     } catch {
       setError("Failed to complete device destruction")
+    } finally {
       setCompleting(false)
     }
   }
+
+  const completedSteps = device?.steps_completed?.length || 0
+  const totalSteps = procedures.length || 1
+  const progress = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0
+  const allDone = completedSteps >= totalSteps && totalSteps > 0
+  const isDocumented = device?.status === "documented"
+
+  // Auto-complete when all steps are done
+  useEffect(() => {
+    if (allDone && !isDocumented && !completing && procedures.length > 0 && device) {
+      handleComplete()
+    }
+  }, [allDone, isDocumented])
 
   if (loading) {
     return <Layout><div className="text-center py-12 text-slate-400">Loading device...</div></Layout>
@@ -141,11 +155,6 @@ export default function DeviceDetail() {
       </Layout>
     )
   }
-
-  const completedSteps = device.steps_completed?.length || 0
-  const totalSteps = procedures.length || 1
-  const progress = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0
-  const allDone = completedSteps >= totalSteps && totalSteps > 0
 
   return (
     <Layout>
@@ -330,21 +339,22 @@ export default function DeviceDetail() {
 
         {/* Footer */}
         <div className="mt-10 py-10 text-center border-t border-slate-800">
-          <button
-            onClick={handleComplete}
-            disabled={!allDone || completing}
-            className={`px-10 py-4 font-bold rounded-xl flex items-center gap-3 mx-auto text-lg transition-all ${
-              allDone
-                ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 active:scale-[0.98]"
-                : "bg-slate-800 text-slate-500 cursor-not-allowed"
-            }`}
-          >
-            <span className="material-symbols-outlined">assignment_turned_in</span>
-            {completing ? "Generating..." : "Mark Device Complete"}
-          </button>
-          {!allDone && (
-            <p className="text-slate-500 text-sm mt-4 italic">
-              Complete all {totalSteps} steps to enable final certification. ({completedSteps}/{totalSteps} done)
+          {isDocumented ? (
+            <button
+              onClick={() => navigate(`/compliance/${id}`)}
+              className="px-10 py-4 font-bold rounded-xl flex items-center gap-3 mx-auto text-lg transition-all bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 active:scale-[0.98]"
+            >
+              <span className="material-symbols-outlined">description</span>
+              Review Compliance Document
+            </button>
+          ) : completing ? (
+            <div className="px-10 py-4 font-bold rounded-xl flex items-center gap-3 mx-auto text-lg bg-slate-800 text-slate-400 w-fit">
+              <span className="material-symbols-outlined animate-spin">sync</span>
+              Generating Compliance Document...
+            </div>
+          ) : (
+            <p className="text-slate-500 text-sm italic">
+              Complete all {totalSteps} steps to generate the compliance document. ({completedSteps}/{totalSteps} done)
             </p>
           )}
         </div>

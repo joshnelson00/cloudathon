@@ -1,1 +1,214 @@
-{}
+{
+  "5453749e-08e4-44d7-8328-14f96e3c784e": {
+    "device_id": "5453749e-08e4-44d7-8328-14f96e3c784e",
+    "chassis_serial": "pioeaenrg",
+    "device_type": "laptop_hdd",
+    "make_model": ";kamnerg",
+    "intake_timestamp": "2026-04-11T14:36:12.511193+00:00",
+    "status": "intake",
+    "procedure_id": "hdd_purge_v1",
+    "steps_completed": [],
+    "comp_doc": null,
+    "wipe_result": null
+  },
+  "c7280810-fe76-4ac5-9db6-5a43e74a4c10": {
+    "device_id": "c7280810-fe76-4ac5-9db6-5a43e74a4c10",
+    "chassis_serial": "TEST123",
+    "device_type": "laptop_hdd",
+    "make_model": "Dell Latitude 5520",
+    "intake_timestamp": "2026-04-11T14:37:40.908801+00:00",
+    "status": "documented",
+    "procedure_id": "hdd_purge_v1",
+    "steps_completed": [
+      {
+        "step_id": "hdd_1",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T14:40:43.374836+00:00"
+      },
+      {
+        "step_id": "hdd_2",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {
+          "drive_serial": "12",
+          "drive_model": "12",
+          "drive_manufacturer": "12",
+          "drive_capacity_gb": "1"
+        },
+        "timestamp": "2026-04-11T14:40:46.721465+00:00"
+      },
+      {
+        "step_id": "hdd_3",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T14:40:48.308593+00:00"
+      },
+      {
+        "step_id": "hdd_4",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T14:40:50.232023+00:00"
+      },
+      {
+        "step_id": "hdd_5",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {
+          "wipe_tool_name": "1",
+          "wipe_tool_version": "1"
+        },
+        "timestamp": "2026-04-11T14:40:52.804251+00:00"
+      },
+      {
+        "step_id": "hdd_6",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T14:40:54.410406+00:00"
+      },
+      {
+        "step_id": "hdd_7",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {
+          "wipe_result": "pass"
+        },
+        "timestamp": "2026-04-11T14:40:57.276996+00:00"
+      },
+      {
+        "step_id": "hdd_8",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T14:40:58.858932+00:00"
+      },
+      {
+        "step_id": "hdd_9",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T14:41:00.662396+00:00"
+      }
+    ],
+    "comp_doc": "/api/compliance/c7280810-fe76-4ac5-9db6-5a43e74a4c10/download",
+    "wipe_result": true,
+    "drive_serial": "12",
+    "drive_model": "12",
+    "drive_manufacturer": "12",
+    "drive_capacity_gb": "1",
+    "wipe_tool_name": "1",
+    "wipe_tool_version": "1",
+    "completed_by": "unknown",
+    "completed_at": "2026-04-11T14:41:10.898339+00:00"
+  },
+  "a9ba7046-6b80-4e98-92b4-6bae440a9b56": {
+    "device_id": "a9ba7046-6b80-4e98-92b4-6bae440a9b56",
+    "chassis_serial": "wfg",
+    "device_type": "laptop_hdd",
+    "make_model": "wer",
+    "intake_timestamp": "2026-04-11T14:42:51.190925+00:00",
+    "status": "intake",
+    "procedure_id": "hdd_purge_v1",
+    "steps_completed": [],
+    "comp_doc": null,
+    "wipe_result": null
+  },
+  "6ca55327-93d5-4efa-8aec-57a7ba70503d": {
+    "device_id": "6ca55327-93d5-4efa-8aec-57a7ba70503d",
+    "chassis_serial": "test123",
+    "device_type": "laptop_hdd",
+    "make_model": "test456",
+    "intake_timestamp": "2026-04-11T14:46:46.968337+00:00",
+    "status": "documented",
+    "procedure_id": "hdd_purge_v1",
+    "steps_completed": [
+      {
+        "step_id": "hdd_1",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T14:46:47.882589+00:00"
+      },
+      {
+        "step_id": "hdd_2",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {
+          "drive_serial": "12",
+          "drive_model": "12",
+          "drive_capacity_gb": "1",
+          "drive_manufacturer": "12"
+        },
+        "timestamp": "2026-04-11T14:46:51.118138+00:00"
+      },
+      {
+        "step_id": "hdd_3",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T14:46:51.989194+00:00"
+      },
+      {
+        "step_id": "hdd_4",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T14:46:53.299949+00:00"
+      },
+      {
+        "step_id": "hdd_5",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {
+          "wipe_tool_name": "12",
+          "wipe_tool_version": "1.1.1"
+        },
+        "timestamp": "2026-04-11T14:46:57.156153+00:00"
+      },
+      {
+        "step_id": "hdd_6",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T14:46:58.322769+00:00"
+      },
+      {
+        "step_id": "hdd_7",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {
+          "wipe_result": "fail"
+        },
+        "timestamp": "2026-04-11T14:47:00.437822+00:00"
+      },
+      {
+        "step_id": "hdd_8",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T14:47:03.174317+00:00"
+      },
+      {
+        "step_id": "hdd_9",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T14:47:04.540579+00:00"
+      }
+    ],
+    "comp_doc": "/api/compliance/6ca55327-93d5-4efa-8aec-57a7ba70503d/download",
+    "wipe_result": false,
+    "drive_serial": "12",
+    "drive_model": "12",
+    "drive_capacity_gb": "1",
+    "drive_manufacturer": "12",
+    "wipe_tool_name": "12",
+    "wipe_tool_version": "1.1.1",
+    "completed_by": "unknown",
+    "completed_at": "2026-04-11T14:47:04.561942+00:00"
+  }
+}
