@@ -5,7 +5,7 @@ import Layout from "../components/Layout"
 
 interface ComplianceData {
   device_id: string
-  compliance_doc_url: string
+  comp_doc: string
   generated_at?: string
 }
 
@@ -25,9 +25,9 @@ export default function ComplianceRecord() {
   }, [id])
 
   const handleDownload = () => {
-    if (!data?.compliance_doc_url) return
+    if (!data?.comp_doc) return
     setDownloading(true)
-    window.open(data.compliance_doc_url, "_blank")
+    window.open(data.comp_doc, "_blank")
     setDownloading(false)
   }
 
@@ -134,7 +134,7 @@ export default function ComplianceRecord() {
               </p>
               <button
                 onClick={handleDownload}
-                disabled={downloading || !data.compliance_doc_url}
+                disabled={downloading || !data.comp_doc}
                 className="bg-orange-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition inline-flex items-center gap-2 active:scale-95"
               >
                 <span className="material-symbols-outlined">download</span>
