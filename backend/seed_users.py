@@ -89,6 +89,7 @@ def seed_users():
 
         item = {
             "user_id": user_id,
+            "username": user["username"],
             "fname": user["fname"],
             "lname": user["lname"],
             "email": user["email"],

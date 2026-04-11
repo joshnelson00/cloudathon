@@ -144,11 +144,22 @@ jobs:
           exit 1
 
       - name: Deploy backend on EC2 via SSM
+        env:
+          JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
         run: |
           set -euo pipefail
           instance_id="${{ needs.infra.outputs.ec2_instance_id }}"
           bucket="${{ needs.infra.outputs.s3_bucket_name }}"
           object_key="deployments/backend-${{ github.sha }}.tgz"
+
+          if [ -z "${JWT_SECRET_KEY:-}" ]; then
+            echo "JWT_SECRET_KEY secret is not set in repository secrets" >&2
+            exit 1
+          fi
+
+          # base64-encode the JWT secret so it survives both JSON encoding and
+          # shell re-parsing inside the SSM command document without escape grief
+          jwt_b64="$(printf '%s' "$JWT_SECRET_KEY" | base64 -w 0)"
 
           cat > ssm-params.json <<EOFPARAMS
           {
@@ -156,13 +167,12 @@ jobs:
               "set -euo pipefail",
               "mkdir -p /opt/hackathon",
               "cd /opt/hackathon",
-              "existing_jwt=\"\$(grep '^JWT_SECRET_KEY=' backend/.env 2>/dev/null | head -n1 | cut -d= -f2- || true)\"",
-              "if [ -z \"\$existing_jwt\" ]; then echo 'JWT_SECRET_KEY missing in /opt/hackathon/backend/.env' >&2; exit 1; fi",
               "aws s3 cp s3://${bucket}/${object_key} backend.tgz",
               "rm -rf backend && mkdir -p backend",
               "tar -xzf backend.tgz -C backend",
+              "jwt=\"\$(printf '%s' '${jwt_b64}' | base64 -d)\"",
               "printf 'ENVIRONMENT=production\\nPORT=8000\\nALLOWED_ORIGINS=*\\nSERVICE_ENDPOINTS_JSON={\"analytics\":\"\",\"notifications\":\"\",\"payments\":\"\"}\\nUSE_MOCK_DB=false\\n' > backend/.env",
-              "printf 'JWT_SECRET_KEY=%s\\n' \"\$existing_jwt\" >> backend/.env",
+              "printf 'JWT_SECRET_KEY=%s\\n' \"\$jwt\" >> backend/.env",
               "python3 -m venv /opt/hackathon/venv",
               "/opt/hackathon/venv/bin/pip install --upgrade pip",
               "/opt/hackathon/venv/bin/pip install -r /opt/hackathon/backend/requirements.txt",

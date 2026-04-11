@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(aws dynamodb:*)",
+      "Bash('/c/Program Files/Amazon/AWSCLIV2/aws.exe' dynamodb scan --table-name hackathon-dev-procedures --select COUNT)",
+      "Bash('/c/Program Files/Amazon/AWSCLIV2/aws.exe' dynamodb scan --table-name hackathon-dev-devices --select COUNT)",
+      "Bash('/c/Program Files/Amazon/AWSCLIV2/aws.exe' dynamodb scan --table-name hackathon-dev-users --select COUNT)",
+      "Bash('/c/Program Files/Amazon/AWSCLIV2/aws.exe' dynamodb list-tables)",
+      "Bash('/c/Program Files/Amazon/AWSCLIV2/aws.exe' configure get region)",
+      "Bash(terraform version:*)",
+      "Read(//c/Program Files//**)"
+    ]
+  }
+}
