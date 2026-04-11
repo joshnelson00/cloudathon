@@ -4,13 +4,11 @@ import { api } from "../api/client"
 import Layout from "../components/Layout"
 
 const DEVICE_TYPES = [
-  { value: "laptop_hdd", label: "Laptop - HDD" },
-  { value: "laptop_ssd", label: "Laptop - SSD" },
-  { value: "desktop_hdd", label: "Desktop - HDD" },
-  { value: "desktop_ssd", label: "Desktop - SSD" },
-  { value: "tablet", label: "Tablet / Mobile" },
-  { value: "drive_external", label: "External Drive" },
-  { value: "no_storage", label: "Device with No Storage" },
+  { value: "laptop_hdd", label: "Laptop — HDD" },
+  { value: "laptop_ssd", label: "Laptop — SSD" },
+  { value: "tablet",     label: "Tablet" },
+  { value: "drive_external", label: "External Drive — HDD" },
+  { value: "no_storage", label: "No usable storage" },
 ]
 
 export default function DeviceIntake() {
@@ -23,135 +21,168 @@ export default function DeviceIntake() {
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    })
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     setLoading(true)
-
     try {
       const response = await api.post("/api/devices", formData)
       navigate(`/device/${response.data.device_id}`)
     } catch (err: any) {
-      setError(
-        err.response?.data?.detail ||
-          "Failed to create device. Please try again."
-      )
+      setError(err.response?.data?.detail || "Failed to create device. Please try again.")
     } finally {
       setLoading(false)
     }
   }
 
+  const username = localStorage.getItem("username") || "—"
+
   return (
     <Layout>
-      <div className="max-w-2xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Device Intake
-          </h1>
-          <p className="text-gray-600">
-            Register a new device for NIST SP 800-88 compliant destruction
+      <div className="max-w-6xl mx-auto">
+        {/* Page Header */}
+        <div className="mb-10">
+          <h1 className="text-3xl font-extrabold text-white tracking-tight mb-2">Intake New Device</h1>
+          <p className="text-slate-400 max-w-2xl leading-relaxed">
+            Enter the donated device details below. The correct NIST sanitization procedure will be assigned automatically based on the device storage architecture.
           </p>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-800 text-sm">{error}</p>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          {/* Left: Form */}
+          <div className="lg:col-span-7">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {error && (
+                <div className="p-4 bg-red-900/30 border border-red-700 rounded-lg">
+                  <p className="text-red-300 text-sm">{error}</p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Serial Number */}
+                <div className="col-span-2">
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">Chassis Serial Number</label>
+                  <input
+                    type="text"
+                    name="chassis_serial"
+                    value={formData.chassis_serial}
+                    onChange={handleChange}
+                    placeholder="e.g. SN-8829-XJ-01"
+                    required
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-orange-600 focus:border-orange-600 outline-none transition-all"
+                  />
+                </div>
+
+                {/* Device Type */}
+                <div className="col-span-2">
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">Device Type</label>
+                  <select
+                    name="device_type"
+                    value={formData.device_type}
+                    onChange={handleChange}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-slate-100 focus:ring-2 focus:ring-orange-600 focus:border-orange-600 outline-none transition-all"
+                  >
+                    {DEVICE_TYPES.map((t) => (
+                      <option key={t.value} value={t.value}>{t.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Make & Model */}
+                <div className="col-span-1">
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">Make &amp; Model</label>
+                  <input
+                    type="text"
+                    name="make_model"
+                    value={formData.make_model}
+                    onChange={handleChange}
+                    placeholder="Dell Latitude 5400"
+                    required
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-orange-600 focus:border-orange-600 outline-none transition-all"
+                  />
+                </div>
+
+                {/* Worker ID (read-only) */}
+                <div className="col-span-1">
+                  <label className="block text-sm font-semibold text-slate-500 mb-2">Worker ID</label>
+                  <input
+                    type="text"
+                    value={username}
+                    readOnly
+                    className="w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-3 text-slate-500 cursor-not-allowed font-mono"
+                  />
+                </div>
               </div>
-            )}
 
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">
-                Chassis Serial Number
-              </label>
-              <input
-                type="text"
-                name="chassis_serial"
-                value={formData.chassis_serial}
-                onChange={handleChange}
-                placeholder="e.g., SN-9920-XLT"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                The unique identifier on the device chassis
-              </p>
-            </div>
+              <div className="pt-4 flex gap-4">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-10 py-4 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-lg shadow-lg shadow-orange-600/20 flex items-center gap-3 transition-all active:scale-[0.98]"
+                >
+                  <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>assignment_turned_in</span>
+                  {loading ? "Registering..." : "Register Device"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("/")}
+                  className="px-6 py-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-lg transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
 
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">
-                Device Type
-              </label>
-              <select
-                name="device_type"
-                value={formData.device_type}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {DEVICE_TYPES.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-gray-500 mt-1">
-                This determines the NIST procedure to follow
-              </p>
-            </div>
+          {/* Right: Info Panel */}
+          <div className="lg:col-span-5">
+            <div className="bg-slate-900 border border-slate-700 rounded-xl p-8 sticky top-24">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-blue-900/40 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="material-symbols-outlined text-blue-400">info</span>
+                </div>
+                <div>
+                  <h3 className="font-bold text-white mb-1" style={{ fontFamily: "Manrope, sans-serif" }}>NIST Assignment Engine</h3>
+                  <p className="text-sm text-slate-400 leading-relaxed">
+                    Procedure will be auto-assigned based on device type and storage medium detected.
+                  </p>
+                </div>
+              </div>
 
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">
-                Make / Model
-              </label>
-              <input
-                type="text"
-                name="make_model"
-                value={formData.make_model}
-                onChange={handleChange}
-                placeholder="e.g., Dell Latitude 5400"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Manufacturer and model number
-              </p>
-            </div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-4 bg-slate-800 border border-slate-700 rounded-lg">
+                  <span className="material-symbols-outlined text-slate-400">memory</span>
+                  <div className="text-xs">
+                    <span className="font-bold text-slate-200 block">SSD / Flash Protocol</span>
+                    <span className="text-slate-400">NIST 800-88 Purge / Cryptographic Erase</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-4 bg-slate-800 border border-slate-700 rounded-lg">
+                  <span className="material-symbols-outlined text-slate-400">hard_drive</span>
+                  <div className="text-xs">
+                    <span className="font-bold text-slate-200 block">HDD / Magnetic Protocol</span>
+                    <span className="text-slate-400">NIST 800-88 Clear / 3-Pass Overwrite</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-4 bg-slate-800 border border-slate-700 rounded-lg">
+                  <span className="material-symbols-outlined text-slate-400">phonelink_erase</span>
+                  <div className="text-xs">
+                    <span className="font-bold text-slate-200 block">Tablet / No Storage Protocol</span>
+                    <span className="text-slate-400">NIST 800-88 Clear / Factory Reset</span>
+                  </div>
+                </div>
+              </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-800">
-                <strong>Next Step:</strong> After intake, you'll record drive
-                details and follow the NIST-compliant destruction procedure for
-                this device type.
-              </p>
+              <div className="mt-8 pt-6 border-t border-slate-700 flex items-center gap-2">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                <span className="text-xs text-slate-400 font-medium">Compliance Engine Online</span>
+              </div>
             </div>
-
-            <div className="flex gap-4">
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 font-bold transition"
-              >
-                {loading ? "Creating..." : "Create Device Record"}
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate("/")}
-                className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-bold transition"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
+          </div>
         </div>
       </div>
     </Layout>
