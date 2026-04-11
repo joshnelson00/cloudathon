@@ -15,6 +15,12 @@ const EXAMPLES = [
   "Show me failed wipes this week",
   "How many laptops vs desktops?",
   "Which devices are still in progress?",
+  "What is our completion rate?",
+  "What is the wipe pass rate?",
+  "Show status breakdown",
+  "Show device type breakdown",
+  "Any documented devices missing certificate links?",
+  "How many external drives do we have?",
 ]
 
 export default function Analytics() {
