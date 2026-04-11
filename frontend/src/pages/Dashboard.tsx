@@ -4,7 +4,6 @@ import {
   FiBarChart2,
   FiZap,
   FiCheckCircle,
-  FiUsers,
   FiPlus,
 } from "react-icons/fi"
 import { api } from "../api/client"
@@ -40,21 +39,7 @@ export default function Dashboard() {
   })
   const [devices, setDevices] = useState<Device[]>([])
   const [loading, setLoading] = useState(true)
-  const [userRole, setUserRole] = useState<string>("")
   const navigate = useNavigate()
-
-  useEffect(() => {
-    // Fetch current user to check if admin
-    const fetchUserRole = async () => {
-      try {
-        const response = await api.get("/auth/me")
-        setUserRole(response.data.role)
-      } catch (err) {
-        console.error("Failed to fetch user role:", err)
-      }
-    }
-    fetchUserRole()
-  }, [])
 
   useEffect(() => {
     loadDashboardData()
@@ -112,15 +97,6 @@ export default function Dashboard() {
             <p className="text-gray-600">CityServe Device Destruction System</p>
           </div>
           <div className="flex gap-3">
-            {userRole === "admin" && (
-              <button
-                onClick={() => navigate("/admin/users")}
-                className="bg-gray-700 text-white px-6 py-3 rounded-lg font-bold hover:bg-gray-800 transition flex items-center gap-2"
-              >
-                <FiUsers className="w-5 h-5" />
-                Manage Users
-              </button>
-            )}
             <button
               onClick={() => navigate("/intake")}
               className="bg-gray-700 text-white px-6 py-3 rounded-lg font-bold hover:bg-gray-800 transition flex items-center gap-2"

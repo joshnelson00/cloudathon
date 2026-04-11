@@ -1,9 +1,8 @@
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, HTTPException
 
-from ..auth import get_current_user
 from ..db import get_devices_table, get_procedures_table
 from ..models import (
     DeviceCompleteResponse,
@@ -32,10 +31,7 @@ DEVICE_TYPE_TO_PROCEDURE = {
 
 
 @router.post("/devices", response_model=DeviceIntakeResponse)
-def intake_device(
-    body: DeviceIntakeRequest,
-    user: dict = Depends(get_current_user),
-):
+def intake_device(body: DeviceIntakeRequest):
     procedure_id = DEVICE_TYPE_TO_PROCEDURE.get(body.device_type)
     if not procedure_id:
         raise HTTPException(
@@ -53,7 +49,6 @@ def intake_device(
         "device_type":      body.device_type,
         "make_model":       body.make_model,
         "intake_timestamp": now,
-        "user_id":          user["username"],
         "status":           "intake",
         "procedure_id":     procedure_id,
         "steps_completed":  [],
@@ -71,7 +66,7 @@ def intake_device(
 
 
 @router.get("/devices")
-def list_devices(user: dict = Depends(get_current_user)):
+def list_devices():
     result = get_devices_table().scan()
     items = result.get("Items", [])
     items.sort(key=lambda x: x.get("intake_timestamp", ""), reverse=True)
@@ -79,7 +74,7 @@ def list_devices(user: dict = Depends(get_current_user)):
 
 
 @router.get("/devices/{device_id}", response_model=DeviceDetail)
-def get_device(device_id: str, user: dict = Depends(get_current_user)):
+def get_device(device_id: str):
     result = get_devices_table().get_item(Key={"device_id": device_id})
     item = result.get("Item")
     if not item:
@@ -91,7 +86,6 @@ def get_device(device_id: str, user: dict = Depends(get_current_user)):
         device_type=item["device_type"],
         make_model=item["make_model"],
         intake_timestamp=item["intake_timestamp"],
-        user_id=item["user_id"],
         status=item["status"],
         procedure_id=item["procedure_id"],
         wipe_result=item.get("wipe_result"),
@@ -103,7 +97,6 @@ def get_device(device_id: str, user: dict = Depends(get_current_user)):
 def complete_step(
     device_id: str,
     body: StepCompleteRequest,
-    user: dict = Depends(get_current_user),
 ):
     table = get_devices_table()
     result = table.get_item(Key={"device_id": device_id})
@@ -141,7 +134,7 @@ def complete_step(
 
 
 @router.get("/procedures/{procedure_id}")
-def get_procedure(procedure_id: str, user: dict = Depends(get_current_user)):
+def get_procedure(procedure_id: str):
     result = get_procedures_table().get_item(Key={"procedure_id": procedure_id})
     item = result.get("Item")
     if not item:
@@ -150,10 +143,7 @@ def get_procedure(procedure_id: str, user: dict = Depends(get_current_user)):
 
 
 @router.post("/devices/{device_id}/complete", response_model=DeviceCompleteResponse)
-def complete_device(
-    device_id: str,
-    user: dict = Depends(get_current_user),
-):
+def complete_device(device_id: str):
     table = get_devices_table()
     result = table.get_item(Key={"device_id": device_id})
     item = result.get("Item")

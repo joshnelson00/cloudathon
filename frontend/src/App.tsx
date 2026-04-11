@@ -1,12 +1,9 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
 import { useEffect, useState } from "react"
-import Login from "./pages/Login"
-import SignUp from "./pages/SignUp"
 import Dashboard from "./pages/Dashboard"
 import DeviceIntake from "./pages/DeviceIntake"
 import DeviceDetail from "./pages/DeviceDetail"
 import ComplianceRecord from "./pages/ComplianceRecord"
-import AdminUsers from "./pages/AdminUsers"
 
 export default function App() {
   const [ready, setReady] = useState(false)
@@ -21,13 +18,10 @@ export default function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<SignUp />} />
         <Route path="/" element={<Dashboard />} />
         <Route path="/intake" element={<DeviceIntake />} />
         <Route path="/device/:id" element={<DeviceDetail />} />
         <Route path="/compliance/:id" element={<ComplianceRecord />} />
-        <Route path="/admin/users" element={<AdminUsers />} />
       </Routes>
     </Router>
   )
