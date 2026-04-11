@@ -72,7 +72,7 @@ def get_compliance(device_id: str):
         raise HTTPException(status_code=404, detail="Device not found")
 
     comp_doc = item.get("comp_doc")
-    if settings.s3_compliance_bucket:
+    if settings.s3_compliance_bucket and not settings.use_mock_db:
         bucket = settings.s3_compliance_bucket
         s3_key = _extract_s3_key(comp_doc, device_id)
         fallback_key = _default_s3_key(device_id)
@@ -103,7 +103,7 @@ def download_compliance_pdf(device_id: str):
     if not item:
         raise HTTPException(status_code=404, detail="Device not found")
 
-    if settings.s3_compliance_bucket:
+    if settings.s3_compliance_bucket and not settings.use_mock_db:
         bucket = settings.s3_compliance_bucket
         stored_doc = item.get("comp_doc")
         primary_key = _extract_s3_key(stored_doc, device_id)
