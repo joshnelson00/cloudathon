@@ -42,7 +42,7 @@ class DeviceIntakeRequest(BaseModel):
 
 class DeviceIntakeResponse(BaseModel):
     device_id: str
-    procedure_id: int
+    procedure_id: str
     status: str
 
 
@@ -69,7 +69,7 @@ class ProcedureStep(BaseModel):
 
 
 class Procedure(BaseModel):
-    procedure_id: int
+    procedure_id: str
     device_type: str
     nist_method: str
     label: str
@@ -84,9 +84,9 @@ class DeviceDetail(BaseModel):
     intake_timestamp: str
     user_id: str
     status: str
-    procedure_id: int
+    procedure_id: str
     wipe_result: Optional[bool] = None
-    comp_doc: Optional[str] = None  # Link to .md compliance document in S3
+    comp_doc: Optional[str] = None  # Link to compliance document in S3
 
 
 # ── Complete device (trigger compliance document) ─────────────────────────────

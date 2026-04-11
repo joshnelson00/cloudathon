@@ -77,7 +77,7 @@ def _build_pdf_bytes(device: dict) -> bytes:
         ["Field", "Value"],
         ["Device ID",       device.get("device_id", "—")],
         ["Serial Number",   device.get("chassis_serial", "—")],
-        ["Make / Model",    device.get("chassis_make_model", "—")],
+        ["Make / Model",    device.get("make_model", "—")],
         ["Device Type",     device_type_labels.get(device.get("device_type", ""), device.get("device_type", "—"))],
         ["Processed By",    device.get("worker_id", "—")],
         ["Intake Date",     device.get("intake_timestamp", "—")[:19].replace("T", " ")],

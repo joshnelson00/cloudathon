@@ -1,7 +1,6 @@
 import uuid
 from datetime import datetime, timezone
 
-from boto3.dynamodb.conditions import Attr
 from fastapi import APIRouter, Depends, HTTPException
 
 from ..auth import get_current_user
@@ -13,7 +12,6 @@ from ..models import (
     DeviceIntakeResponse,
     StepCompleteRequest,
     StepCompleteResponse,
-    StepLog,
 )
 
 router = APIRouter()
@@ -48,17 +46,17 @@ def intake_device(
     now = datetime.now(timezone.utc).isoformat()
 
     item = {
-        "device_id":         device_id,
-        "chassis_serial":    body.chassis_serial,
-        "device_type":       body.device_type,
-        "chassis_make_model": body.chassis_make_model,
-        "intake_timestamp":  now,
-        "worker_id":         user["username"],
-        "status":            "intake",
-        "procedure_id":      procedure_id,
-        "steps_completed":   [],
-        "compliance_doc_url": None,
-        "notes":             "",
+        "device_id":        device_id,
+        "chassis_serial":   body.chassis_serial,
+        "device_type":      body.device_type,
+        "make_model":       body.make_model,
+        "intake_timestamp": now,
+        "user_id":          user["username"],
+        "status":           "intake",
+        "procedure_id":     procedure_id,
+        "steps_completed":  [],
+        "comp_doc":         None,
+        "wipe_result":      None,
     }
 
     get_devices_table().put_item(Item=item)
@@ -74,7 +72,6 @@ def intake_device(
 def list_devices(user: dict = Depends(get_current_user)):
     result = get_devices_table().scan()
     items = result.get("Items", [])
-    # Sort newest first
     items.sort(key=lambda x: x.get("intake_timestamp", ""), reverse=True)
     return {"devices": items}
 
@@ -86,20 +83,17 @@ def get_device(device_id: str, user: dict = Depends(get_current_user)):
     if not item:
         raise HTTPException(status_code=404, detail="Device not found")
 
-    steps = [StepLog(**s) for s in item.get("steps_completed", [])]
-
     return DeviceDetail(
         device_id=item["device_id"],
         chassis_serial=item["chassis_serial"],
         device_type=item["device_type"],
-        chassis_make_model=item["chassis_make_model"],
+        make_model=item["make_model"],
         intake_timestamp=item["intake_timestamp"],
-        worker_id=item["worker_id"],
+        user_id=item["user_id"],
         status=item["status"],
         procedure_id=item["procedure_id"],
-        steps_completed=steps,
-        compliance_doc_url=item.get("compliance_doc_url"),
-        notes=item.get("notes", ""),
+        wipe_result=item.get("wipe_result"),
+        comp_doc=item.get("comp_doc"),
     )
 
 
@@ -124,7 +118,6 @@ def complete_step(
     }
 
     steps = list(item.get("steps_completed", []))
-    # Replace existing entry for this step_id if present
     steps = [s for s in steps if s["step_id"] != body.step_id]
     steps.append(step_log)
 
@@ -165,13 +158,12 @@ def complete_device(
     if not item:
         raise HTTPException(status_code=404, detail="Device not found")
 
-    # Generate the compliance PDF inline (no Lambda yet — works for demo)
     from ..pdf import generate_compliance_pdf
     pdf_url = generate_compliance_pdf(item)
 
     table.update_item(
         Key={"device_id": device_id},
-        UpdateExpression="SET #st = :status, compliance_doc_url = :url",
+        UpdateExpression="SET #st = :status, comp_doc = :url",
         ExpressionAttributeNames={"#st": "status"},
         ExpressionAttributeValues={
             ":status": "documented",
@@ -182,5 +174,5 @@ def complete_device(
     return DeviceCompleteResponse(
         device_id=device_id,
         status="documented",
-        compliance_doc_url=pdf_url,
+        comp_doc=pdf_url,
     )
