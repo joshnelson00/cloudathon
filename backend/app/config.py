@@ -12,11 +12,11 @@ class Settings(BaseSettings):
     service_endpoints_json: dict[str, str] = Field(default_factory=dict)
 
     # Database configuration
-    use_mock_db: bool = True  # Use mock JSON-based DB by default for demo
+    use_mock_db: bool = False  # Switch to real DynamoDB
     aws_region: str = "us-west-1"
-    dynamodb_devices_table: str = "cityserve-devices"
-    dynamodb_procedures_table: str = "cityserve-procedures"
-    dynamodb_users_table: str = "cityserve-users"
+    dynamodb_devices_table: str = "hackathon-dev-devices"
+    dynamodb_procedures_table: str = "hackathon-dev-procedures"
+    dynamodb_users_table: str = "hackathon-dev-users"
     s3_compliance_bucket: str = ""
 
     jwt_secret_key: str = Field(default=..., description="JWT signing secret — must be set via JWT_SECRET_KEY env var")
