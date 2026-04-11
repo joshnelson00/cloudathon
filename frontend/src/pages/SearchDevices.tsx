@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useNavigate } from "react-router-dom"
 import { api } from "../api/client"
 import Layout from "../components/Layout"
@@ -36,6 +36,31 @@ const STATUS_CONFIG: Record<string, { color: string; label: string }> = {
   closed: { color: "bg-slate-800 text-slate-400", label: "Closed" },
 }
 
+// Returns a score 0–2. Higher = better match. 0 = no match.
+function fuzzyScore(query: string, text: string): number {
+  if (!query) return 2
+  const q = query.toLowerCase()
+  const t = text.toLowerCase()
+  if (t.includes(q)) return 2
+  // subsequence match — every char in q appears in order in t
+  let qi = 0
+  for (let i = 0; i < t.length && qi < q.length; i++) {
+    if (t[i] === q[qi]) qi++
+  }
+  return qi === q.length ? 1 : 0
+}
+
+function deviceMatchesQuery(device: Device, query: string): boolean {
+  if (!query.trim()) return true
+  const fields = [
+    device.chassis_serial,
+    device.device_type.replace(/_/g, " "),
+    device.make_model,
+    device.status,
+  ]
+  return fields.some((f) => fuzzyScore(query, f) > 0)
+}
+
 export default function SearchDevices() {
   const [query, setQuery] = useState("")
   const [filters, setFilters] = useState({
@@ -44,48 +69,78 @@ export default function SearchDevices() {
     serial: "",
     make_model: "",
   })
-  const [devices, setDevices] = useState<Device[]>([])
-  const [loading, setLoading] = useState(false)
-  const [searched, setSearched] = useState(false)
+  const [allDevices, setAllDevices] = useState<Device[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
   const navigate = useNavigate()
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setSearched(true)
+  // Load all devices once
+  useEffect(() => {
+    api
+      .get("/api/devices")
+      .then((res) => setAllDevices(res.data.devices || []))
+      .catch(() => setError(true))
+      .finally(() => setLoading(false))
+  }, [])
 
-    try {
-      const params = {
-        q: query,
-        ...Object.fromEntries(
-          Object.entries(filters).filter(([_, v]) => v.trim() !== "")
-        ),
-      }
+  // Live filtering with fuzzy keyword + exact dropdown filters
+  const results = useMemo(() => {
+    let items = allDevices
 
-      const res = await api.get("/api/devices/search", { params })
-      setDevices(res.data.devices || [])
-    } catch (error) {
-      console.error("Failed to search devices:", error)
-      setDevices([])
-    } finally {
-      setLoading(false)
+    if (query.trim()) {
+      items = items.filter((d) => deviceMatchesQuery(d, query))
+      // Sort by match quality: exact substring first
+      items = items.sort((a, b) => {
+        const scoreA = Math.max(
+          fuzzyScore(query, a.chassis_serial),
+          fuzzyScore(query, a.device_type.replace(/_/g, " ")),
+          fuzzyScore(query, a.make_model),
+          fuzzyScore(query, a.status),
+        )
+        const scoreB = Math.max(
+          fuzzyScore(query, b.chassis_serial),
+          fuzzyScore(query, b.device_type.replace(/_/g, " ")),
+          fuzzyScore(query, b.make_model),
+          fuzzyScore(query, b.status),
+        )
+        return scoreB - scoreA
+      })
     }
+
+    if (filters.device_type) {
+      items = items.filter((d) => d.device_type === filters.device_type)
+    }
+    if (filters.status) {
+      items = items.filter((d) => d.status === filters.status)
+    }
+    if (filters.serial.trim()) {
+      items = items.filter((d) =>
+        fuzzyScore(filters.serial, d.chassis_serial) > 0
+      )
+    }
+    if (filters.make_model.trim()) {
+      items = items.filter((d) =>
+        fuzzyScore(filters.make_model, d.make_model) > 0
+      )
+    }
+
+    return items
+  }, [allDevices, query, filters])
+
+  const hasFilters =
+    query.trim() ||
+    filters.device_type ||
+    filters.status ||
+    filters.serial.trim() ||
+    filters.make_model.trim()
+
+  const handleClearFilters = () => {
+    setQuery("")
+    setFilters({ device_type: "", status: "", serial: "", make_model: "" })
   }
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }))
-  }
-
-  const handleClearFilters = () => {
-    setQuery("")
-    setFilters({
-      device_type: "",
-      status: "",
-      serial: "",
-      make_model: "",
-    })
-    setSearched(false)
-    setDevices([])
   }
 
   return (
@@ -94,12 +149,12 @@ export default function SearchDevices() {
         {/* Header */}
         <section>
           <h1 className="text-3xl font-extrabold text-white tracking-tight">Search Devices</h1>
-          <p className="text-slate-400 mt-1">Find devices by type, serial number, make/model, or status</p>
+          <p className="text-slate-400 mt-1">Results update live as you type</p>
         </section>
 
         {/* Search & Filter Form */}
         <section className="bg-slate-900 rounded-lg border border-slate-800 p-6">
-          <form onSubmit={handleSearch} className="space-y-4">
+          <div className="space-y-4">
             {/* Keyword Search */}
             <div>
               <label className="block text-sm font-bold text-slate-300 mb-2">
@@ -109,10 +164,11 @@ export default function SearchDevices() {
                 <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
                 <input
                   type="text"
-                  placeholder="Search across all fields..."
+                  placeholder="Fuzzy search across all fields..."
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-600"
+                  autoFocus
                 />
               </div>
             </div>
@@ -121,9 +177,7 @@ export default function SearchDevices() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Device Type */}
               <div>
-                <label className="block text-sm font-bold text-slate-300 mb-2">
-                  Device Type
-                </label>
+                <label className="block text-sm font-bold text-slate-300 mb-2">Device Type</label>
                 <select
                   value={filters.device_type}
                   onChange={(e) => handleFilterChange("device_type", e.target.value)}
@@ -140,9 +194,7 @@ export default function SearchDevices() {
 
               {/* Status */}
               <div>
-                <label className="block text-sm font-bold text-slate-300 mb-2">
-                  Status
-                </label>
+                <label className="block text-sm font-bold text-slate-300 mb-2">Status</label>
                 <select
                   value={filters.status}
                   onChange={(e) => handleFilterChange("status", e.target.value)}
@@ -159,12 +211,10 @@ export default function SearchDevices() {
 
               {/* Serial Number */}
               <div>
-                <label className="block text-sm font-bold text-slate-300 mb-2">
-                  Serial Number
-                </label>
+                <label className="block text-sm font-bold text-slate-300 mb-2">Serial Number</label>
                 <input
                   type="text"
-                  placeholder="Partial match..."
+                  placeholder="Fuzzy match..."
                   value={filters.serial}
                   onChange={(e) => handleFilterChange("serial", e.target.value)}
                   className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-600"
@@ -173,12 +223,10 @@ export default function SearchDevices() {
 
               {/* Make/Model */}
               <div>
-                <label className="block text-sm font-bold text-slate-300 mb-2">
-                  Make/Model
-                </label>
+                <label className="block text-sm font-bold text-slate-300 mb-2">Make / Model</label>
                 <input
                   type="text"
-                  placeholder="Partial match..."
+                  placeholder="Fuzzy match..."
                   value={filters.make_model}
                   onChange={(e) => handleFilterChange("make_model", e.target.value)}
                   className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-orange-600"
@@ -186,94 +234,92 @@ export default function SearchDevices() {
               </div>
             </div>
 
-            {/* Buttons */}
-            <div className="flex gap-2 pt-2">
-              <button
-                type="submit"
-                className="bg-orange-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-orange-700 transition flex items-center gap-2 active:scale-95"
-              >
-                <span className="material-symbols-outlined text-lg">search</span>
-                Search
-              </button>
-              <button
-                type="button"
-                onClick={handleClearFilters}
-                className="border border-slate-700 text-slate-300 px-6 py-2 rounded-lg font-bold hover:bg-slate-800 transition"
-              >
-                Clear Filters
-              </button>
-            </div>
-          </form>
+            {hasFilters && (
+              <div>
+                <button
+                  type="button"
+                  onClick={handleClearFilters}
+                  className="border border-slate-700 text-slate-300 px-6 py-2 rounded-lg font-bold hover:bg-slate-800 transition"
+                >
+                  Clear Filters
+                </button>
+              </div>
+            )}
+          </div>
         </section>
 
         {/* Results */}
-        {searched && (
-          <section className="bg-slate-900 rounded-lg border border-slate-800 overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-800 bg-slate-800/50">
-              <h3 className="font-bold text-white" style={{ fontFamily: "Manrope, sans-serif" }}>
-                {loading ? "Searching..." : `Results (${devices.length})`}
-              </h3>
-            </div>
+        <section className="bg-slate-900 rounded-lg border border-slate-800 overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-800 bg-slate-800/50">
+            <h3 className="font-bold text-white" style={{ fontFamily: "Manrope, sans-serif" }}>
+              {loading
+                ? "Loading devices..."
+                : error
+                ? "Failed to load devices"
+                : hasFilters
+                ? `Results (${results.length})`
+                : `All Devices (${allDevices.length})`}
+            </h3>
+          </div>
 
-            {loading ? (
-              <div className="p-8 text-center text-slate-400">
-                Searching...
-              </div>
-            ) : devices.length === 0 ? (
-              <div className="p-8 text-center text-slate-400">
-                No devices found matching your search
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-800">
-                      <th className="px-6 py-4">Serial</th>
-                      <th className="px-6 py-4">Type</th>
-                      <th className="px-6 py-4">Make / Model</th>
-                      <th className="px-6 py-4">Status</th>
-                      <th className="px-6 py-4 text-right">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800">
-                    {devices.map((device) => {
-                      const cfg = STATUS_CONFIG[device.status] ?? STATUS_CONFIG.intake
-                      return (
-                        <tr
-                          key={device.device_id}
-                          className="hover:bg-slate-800/40 transition-colors"
-                        >
-                          <td className="px-6 py-4 font-mono text-sm text-slate-200">
-                            {device.chassis_serial}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-slate-300">
-                            {device.device_type.replace(/_/g, " ")}
-                          </td>
-                          <td className="px-6 py-4 text-sm text-slate-300">
-                            {device.make_model}
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`px-2 py-1 rounded text-xs font-bold ${cfg.color}`}>
-                              {cfg.label}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <button
-                              onClick={() => navigate(`/device/${device.device_id}`)}
-                              className="text-orange-500 hover:text-orange-400 font-bold text-sm transition-colors"
-                            >
-                              View
-                            </button>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </section>
-        )}
+          {loading ? (
+            <div className="p-8 text-center text-slate-400">Loading...</div>
+          ) : error ? (
+            <div className="p-8 text-center text-red-400">Could not load devices. Check your connection.</div>
+          ) : results.length === 0 ? (
+            <div className="p-8 text-center text-slate-400">
+              {hasFilters ? "No devices match your search" : "No devices found"}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-800">
+                    <th className="px-6 py-4">Serial</th>
+                    <th className="px-6 py-4">Type</th>
+                    <th className="px-6 py-4">Make / Model</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  {results.map((device) => {
+                    const cfg = STATUS_CONFIG[device.status] ?? STATUS_CONFIG.intake
+                    return (
+                      <tr
+                        key={device.device_id}
+                        className="hover:bg-slate-800/40 transition-colors"
+                      >
+                        <td className="px-6 py-4 font-mono text-sm text-slate-200">
+                          {device.chassis_serial}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-300">
+                          {device.device_type.replace(/_/g, " ")}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-300">
+                          {device.make_model}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2 py-1 rounded text-xs font-bold ${cfg.color}`}>
+                            {cfg.label}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button
+                            onClick={() => navigate(`/device/${device.device_id}`)}
+                            className="text-orange-500 hover:text-orange-400 font-bold text-sm transition-colors"
+                          >
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
       </div>
     </Layout>
   )
