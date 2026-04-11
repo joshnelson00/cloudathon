@@ -18,14 +18,23 @@ export default function ComplianceRecord() {
   const [downloading, setDownloading] = useState(false)
   const [fetchError, setFetchError] = useState("")
 
+  const launchConfettiOnce = (deviceId: string) => {
+    const key = `compliance-confetti-shown:${deviceId}`
+    if (localStorage.getItem(key) === "1") return
+
+    confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors: ["#ea580c", "#10b981", "#ffffff"] })
+    setTimeout(() => confetti({ particleCount: 60, spread: 120, origin: { y: 0.5, x: 0.2 }, colors: ["#ea580c", "#f97316"] }), 300)
+    setTimeout(() => confetti({ particleCount: 60, spread: 120, origin: { y: 0.5, x: 0.8 }, colors: ["#10b981", "#34d399"] }), 500)
+
+    localStorage.setItem(key, "1")
+  }
+
   useEffect(() => {
     if (!id) return
     api.get(`/api/compliance/${id}`)
       .then((res) => {
         setData(res.data)
-        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors: ["#ea580c", "#10b981", "#ffffff"] })
-        setTimeout(() => confetti({ particleCount: 60, spread: 120, origin: { y: 0.5, x: 0.2 }, colors: ["#ea580c", "#f97316"] }), 300)
-        setTimeout(() => confetti({ particleCount: 60, spread: 120, origin: { y: 0.5, x: 0.8 }, colors: ["#10b981", "#34d399"] }), 500)
+        launchConfettiOnce(res.data.device_id || id)
       })
       .catch((err) => {
         setFetchError(err?.response?.data?.detail || err?.message || "Could not load compliance record")
