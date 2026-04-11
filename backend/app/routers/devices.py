@@ -291,7 +291,8 @@ def complete_device(
     }
 
     from ..pdf import generate_compliance_pdf
-    pdf_url = generate_compliance_pdf(cert_item)
+    generate_compliance_pdf(cert_item)
+    stable_doc_path = f"/api/compliance/{device_id}/download"
 
     table.update_item(
         Key={"device_id": device_id},
@@ -299,7 +300,7 @@ def complete_device(
         ExpressionAttributeNames={"#st": "status"},
         ExpressionAttributeValues={
             ":status": "documented",
-            ":url":    pdf_url,
+            ":url":    stable_doc_path,
             ":who":    cert_item["tech_name"] or (current_user or {}).get("username", "unknown"),
             ":when":   now,
         },
@@ -308,5 +309,5 @@ def complete_device(
     return DeviceCompleteResponse(
         device_id=device_id,
         status="documented",
-        comp_doc=pdf_url,
+        comp_doc=stable_doc_path,
     )

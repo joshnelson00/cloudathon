@@ -324,10 +324,15 @@ def generate_compliance_pdf(device: dict) -> str:
     to the Lambda function. Falls back to local generation on error.
     Returns the S3 pre-signed URL, or the local download path if no bucket is set.
     """
+    device_id = str(device.get("device_id", "")).strip()
+    if not device_id:
+        raise ValueError("device_id is required to generate a compliance PDF")
+
     # Delegate to Lambda if configured (AWS environment)
     if settings.lambda_compliance_function_name:
         try:
-            return _generate_via_lambda(device)
+            _generate_via_lambda(device)
+            return f"/api/compliance/{device_id}/download"
         except Exception:
             logger.exception(
                 "Lambda compliance PDF generation failed — falling back to local"
@@ -335,7 +340,8 @@ def generate_compliance_pdf(device: dict) -> str:
 
     # Local / fallback path
     pdf_bytes = _build_pdf_bytes(device)
-    device_id = device["device_id"]
+    if not pdf_bytes:
+        raise RuntimeError("PDF generation produced empty content")
     s3_key    = f"compliance-docs/{device_id}.pdf"
 
     bucket = settings.s3_compliance_bucket
@@ -352,9 +358,4 @@ def generate_compliance_pdf(device: dict) -> str:
         Body=pdf_bytes,
         ContentType="application/pdf",
     )
-    url = s3.generate_presigned_url(
-        "get_object",
-        Params={"Bucket": bucket, "Key": s3_key},
-        ExpiresIn=3600,
-    )
-    return url
+    return f"/api/compliance/{device_id}/download"
