@@ -15,7 +15,7 @@ const DEVICE_TYPES = [
 
 export default function DeviceIntake() {
   const [formData, setFormData] = useState({
-    serial_number: "",
+    chassis_serial: "",
     device_type: "laptop_hdd",
     make_model: "",
   })
@@ -72,12 +72,12 @@ export default function DeviceIntake() {
 
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">
-                Serial Number
+                Chassis Serial Number
               </label>
               <input
                 type="text"
-                name="serial_number"
-                value={formData.serial_number}
+                name="chassis_serial"
+                value={formData.chassis_serial}
                 onChange={handleChange}
                 placeholder="e.g., SN-9920-XLT"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"

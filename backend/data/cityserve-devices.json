@@ -10,5 +10,17 @@
     "steps_completed": [],
     "comp_doc": null,
     "wipe_result": null
+  },
+  "c50f5eb1-4850-425e-ac41-126e920868ba": {
+    "device_id": "c50f5eb1-4850-425e-ac41-126e920868ba",
+    "chassis_serial": "TEST123",
+    "device_type": "laptop_ssd",
+    "make_model": "Dell XPS",
+    "intake_timestamp": "2026-04-11T02:40:10.293875+00:00",
+    "status": "intake",
+    "procedure_id": "sata_ssd_secure_erase_v1",
+    "steps_completed": [],
+    "comp_doc": null,
+    "wipe_result": null
   }
 }
