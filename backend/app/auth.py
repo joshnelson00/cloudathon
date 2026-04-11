@@ -170,7 +170,7 @@ def create_user(
     Create a new user (admin only).
 
     Adds user to DynamoDB users table with hashed password.
-    Falls back to in-memory storage if DynamoDB is unavailable.
+    For local development, can fall back to in-memory storage.
     """
     # Validate username is not already in use
     if body.username in USERS or body.username in DB_USERS:
@@ -190,9 +190,9 @@ def create_user(
         "role": body.role,
     }
 
-    stored_in_db = False
+    storage_location = "unknown"
 
-    # Try to store in DynamoDB
+    # Try to store in DynamoDB (preferred)
     try:
         table = get_users_table()
 
@@ -203,15 +203,25 @@ def create_user(
         )
 
         if response["Items"]:
-            raise HTTPException(status_code=400, detail="Username already exists")
+            raise HTTPException(status_code=400, detail="Username already exists in DynamoDB")
 
         table.put_item(Item=item)
-        stored_in_db = True
+        storage_location = "DynamoDB"
     except HTTPException:
         raise
-    except Exception:
-        # If DynamoDB is unavailable, store in memory
-        DB_USERS[body.username] = item
+    except Exception as e:
+        # For local development: fall back to in-memory storage
+        # In production, this should probably fail
+        import os
+        if os.getenv("ENVIRONMENT", "local") == "local":
+            DB_USERS[body.username] = item
+            storage_location = "local memory (DynamoDB unavailable)"
+        else:
+            # In production, don't silently fail
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to store user in DynamoDB: {str(e)}"
+            )
 
     return UserCreateResponse(
         user_id=user_id,
@@ -220,9 +230,7 @@ def create_user(
         lname=body.lname,
         email=body.email,
         role=body.role,
-        message=f"User {body.username} created successfully" + (
-            " (stored in DynamoDB)" if stored_in_db else " (stored locally)"
-        ),
+        message=f"User {body.username} created successfully (stored in {storage_location})",
     )
 
 
@@ -233,7 +241,7 @@ def signup(body: UserCreateRequest):
 
     Creates new user with 'worker' role by default.
     Adds user to DynamoDB users table with hashed password.
-    Falls back to in-memory storage if DynamoDB is unavailable.
+    For local development, can fall back to in-memory storage.
     """
     # Validate username is not already in use
     if body.username in USERS or body.username in DB_USERS:
@@ -254,9 +262,9 @@ def signup(body: UserCreateRequest):
         "role": ["worker"],  # Self-signup always creates worker accounts
     }
 
-    stored_in_db = False
+    storage_location = "unknown"
 
-    # Try to store in DynamoDB
+    # Try to store in DynamoDB (preferred)
     try:
         table = get_users_table()
 
@@ -267,15 +275,24 @@ def signup(body: UserCreateRequest):
         )
 
         if response["Items"]:
-            raise HTTPException(status_code=400, detail="Username already exists")
+            raise HTTPException(status_code=400, detail="Username already exists in DynamoDB")
 
         table.put_item(Item=item)
-        stored_in_db = True
+        storage_location = "DynamoDB"
     except HTTPException:
         raise
-    except Exception:
-        # If DynamoDB is unavailable, store in memory
-        DB_USERS[body.username] = item
+    except Exception as e:
+        # For local development: fall back to in-memory storage
+        import os
+        if os.getenv("ENVIRONMENT", "local") == "local":
+            DB_USERS[body.username] = item
+            storage_location = "local memory (DynamoDB unavailable)"
+        else:
+            # In production, don't silently fail
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to store user in DynamoDB: {str(e)}"
+            )
 
     return UserCreateResponse(
         user_id=user_id,
@@ -284,7 +301,5 @@ def signup(body: UserCreateRequest):
         lname=body.lname,
         email=body.email,
         role=["worker"],
-        message=f"Account created successfully! You can now login." + (
-            " (stored in DynamoDB)" if stored_in_db else " (stored locally)"
-        ),
+        message=f"Account created successfully! You can now login (stored in {storage_location}).",
     )
