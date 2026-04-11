@@ -1,20 +1,12 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import {
-  FiBarChart2,
-  FiZap,
-  FiCheckCircle,
-  FiPlus,
-} from "react-icons/fi"
 import { api } from "../api/client"
 import Layout from "../components/Layout"
 
 interface DeviceStats {
   total: number
-  intake: number
   in_progress: number
-  verified: number
-  documented: number
+  completed: number
   by_type: Record<string, number>
 }
 
@@ -22,226 +14,230 @@ interface Device {
   device_id: string
   chassis_serial: string
   device_type: string
-  make_model: string
+  chassis_make_model: string
   status: string
+  worker_id: string
   intake_timestamp: string
 }
 
+const STATUS_CONFIG: Record<string, { color: string; label: string; dot: string }> = {
+  intake:      { color: "bg-slate-800 text-slate-300",        dot: "bg-slate-400",   label: "Intake" },
+  in_progress: { color: "bg-orange-900/40 text-orange-400",   dot: "bg-orange-600",  label: "In Progress" },
+  verified:    { color: "bg-emerald-900/40 text-emerald-400", dot: "bg-emerald-500", label: "Verified" },
+  documented:  { color: "bg-emerald-900/40 text-emerald-400", dot: "bg-emerald-500", label: "Documented" },
+  closed:      { color: "bg-slate-800 text-slate-400",        dot: "bg-slate-500",   label: "Closed" },
+}
+
+const DEVICE_ICON: Record<string, string> = {
+  laptop_hdd:     "laptop_mac",
+  laptop_ssd:     "laptop_mac",
+  tablet:         "tablet",
+  phone:          "smartphone",
+  drive_external: "hard_drive",
+  no_storage:     "devices",
+}
+
 export default function Dashboard() {
-  const [stats, setStats] = useState<DeviceStats>({
-    total: 0,
-    intake: 0,
-    in_progress: 0,
-    verified: 0,
-    documented: 0,
-    by_type: {},
-  })
+  const [stats, setStats] = useState<DeviceStats>({ total: 0, in_progress: 0, completed: 0, by_type: {} })
   const [devices, setDevices] = useState<Device[]>([])
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
   useEffect(() => {
-    loadDashboardData()
+    const load = async () => {
+      try {
+        setLoading(true)
+        const [statsRes, devicesRes] = await Promise.all([
+          api.get("/api/dashboard"),
+          api.get("/api/devices"),
+        ])
+        setStats(statsRes.data)
+        setDevices(devicesRes.data.devices || [])
+      } catch {
+        // show zeros on error
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
   }, [])
 
-  const loadDashboardData = async () => {
-    try {
-      setLoading(true)
-      const [statsRes, devicesRes] = await Promise.all([
-        api.get("/api/dashboard"),
-        api.get("/api/devices"),
-      ])
-
-      setStats(statsRes.data)
-      setDevices(devicesRes.data.devices || [])
-    } catch (error) {
-      console.error("Failed to load dashboard:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const getStatusBadge = (status: string) => {
-    const statusConfig: Record<string, { color: string; label: string }> = {
-      intake: { color: "bg-blue-100 text-blue-800", label: "INTAKE QUEUE" },
-      in_progress: {
-        color: "bg-amber-100 text-amber-800",
-        label: "IN PROGRESS",
-      },
-      verified: { color: "bg-green-100 text-green-800", label: "VERIFIED" },
-      documented: {
-        color: "bg-green-100 text-green-800",
-        label: "DOCUMENTED",
-      },
-      closed: { color: "bg-gray-100 text-gray-800", label: "CLOSED" },
-    }
-
-    const config = statusConfig[status] || statusConfig.intake
-    return (
-      <span className={`px-2 py-1 rounded text-xs font-bold ${config.color}`}>
-        {config.label}
-      </span>
-    )
-  }
+  const completedPct = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0
+  const inProgressPct = stats.total > 0 ? Math.round((stats.in_progress / stats.total) * 100) : 0
 
   return (
     <Layout>
       <div className="space-y-8">
-        {/* Header Section */}
+        {/* Header */}
         <section className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-1">
-              System Overview
-            </h2>
-            <p className="text-gray-600">CityServe Device Destruction System</p>
+            <h1 className="text-3xl font-extrabold text-white tracking-tight">Device Dashboard</h1>
+            <p className="text-slate-400 mt-1">Real-time overview of compliance and intake status.</p>
           </div>
-          <div className="flex gap-3">
-            <button
-              onClick={() => navigate("/intake")}
-              className="bg-gray-700 text-white px-6 py-3 rounded-lg font-bold hover:bg-gray-800 transition flex items-center gap-2"
-            >
-              <FiPlus className="w-5 h-5" />
-              Intake New Device
-            </button>
-          </div>
+          <button
+            onClick={() => navigate("/intake")}
+            className="bg-orange-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-orange-700 transition flex items-center gap-2 active:scale-95"
+          >
+            <span className="material-symbols-outlined text-lg">add</span>
+            Intake New Device
+          </button>
         </section>
 
-        {/* Stats Grid */}
+        {/* Stat Cards */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-lg p-6 border border-gray-200">
-            <div className="flex justify-between items-start mb-4">
-              <p className="text-xs font-bold uppercase text-gray-600 tracking-wide">
-                Total Devices
-              </p>
-              <FiBarChart2 className="text-2xl text-gray-700" />
+          <div className="bg-slate-900 p-6 rounded-lg border border-slate-800 flex items-start justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-400 mb-1">Total Devices</p>
+              <h2 className="text-4xl font-black text-white">{stats.total}</h2>
             </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-bold text-gray-900">
-                {stats.total}
-              </span>
-              {stats.total > 0 && (
-                <span className="text-gray-600 font-bold text-sm">All Time</span>
-              )}
+            <div className="w-12 h-12 rounded bg-slate-800 flex items-center justify-center text-slate-300">
+              <span className="material-symbols-outlined text-3xl">devices</span>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg p-6 border border-gray-200">
-            <div className="flex justify-between items-start mb-4">
-              <p className="text-xs font-bold uppercase text-gray-600 tracking-wide">
-                In-Progress
-              </p>
-              <FiZap className="text-2xl text-gray-700" />
+          <div className="bg-slate-900 p-6 rounded-lg border border-slate-800 flex items-start justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-400 mb-1">In Progress</p>
+              <h2 className="text-4xl font-black text-orange-500">{stats.in_progress}</h2>
+              <div className="mt-3 h-2 w-32 bg-slate-800 rounded-full overflow-hidden">
+                <div className="bg-orange-600 h-full rounded-full transition-all" style={{ width: `${inProgressPct}%` }} />
+              </div>
             </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-bold text-gray-900">
-                {stats.in_progress}
-              </span>
-              <span className="text-gray-600 font-bold text-sm">Active</span>
-            </div>
-            <div className="mt-4 flex gap-1 h-2 w-full bg-gray-200 rounded overflow-hidden">
-              {Array.from({ length: 10 }).map((_, i) => (
-                <div
-                  key={i}
-                  className={
-                    i < Math.ceil((stats.in_progress / stats.total) * 10)
-                      ? "flex-1 bg-gray-700"
-                      : "flex-1 bg-gray-300"
-                  }
-                />
-              ))}
+            <div className="w-12 h-12 rounded bg-orange-900/30 flex items-center justify-center text-orange-500">
+              <span className="material-symbols-outlined text-3xl">construction</span>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg p-6 border border-gray-200">
-            <div className="flex justify-between items-start mb-4">
-              <p className="text-xs font-bold uppercase text-gray-600 tracking-wide">
-                Completed
-              </p>
-              <FiCheckCircle className="text-2xl text-gray-700" />
+          <div className="bg-slate-900 p-6 rounded-lg border border-slate-800 flex items-start justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-400 mb-1">Completed</p>
+              <h2 className="text-4xl font-black text-emerald-500">{stats.completed}</h2>
+              <p className="text-xs text-emerald-400 font-bold mt-1">{completedPct}% completion rate</p>
             </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-bold text-gray-900">
-                {stats.documented}
-              </span>
-              <span className="text-gray-600 font-bold text-sm">
-                {stats.total > 0
-                  ? `${Math.round((stats.documented / stats.total) * 100)}%`
-                  : "0%"}
-              </span>
+            <div className="w-12 h-12 rounded bg-emerald-900/30 flex items-center justify-center text-emerald-500">
+              <span className="material-symbols-outlined text-3xl">task_alt</span>
             </div>
           </div>
         </section>
 
-        {/* Live Feed Table */}
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-            <h3 className="text-lg font-bold text-gray-900">
-              Live Feed: Recent Devices
-            </h3>
-            <span className="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded">
-              SYSTEM ONLINE
-            </span>
+        {/* Recent Devices Table */}
+        <div className="bg-slate-900 rounded-lg border border-slate-800 overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-800/50">
+            <h3 className="font-bold text-white" style={{ fontFamily: "Manrope, sans-serif" }}>Recent Devices</h3>
+            <span className="text-xs font-bold text-green-400 bg-green-900/30 px-2 py-1 rounded">LIVE FEED</span>
           </div>
+
           {loading ? (
-            <div className="p-6 text-center text-gray-600">Loading...</div>
+            <div className="p-8 text-center text-slate-400">Loading...</div>
           ) : devices.length === 0 ? (
-            <div className="p-6 text-center text-gray-600">
-              No devices yet. Create one to get started!
-            </div>
+            <div className="p-8 text-center text-slate-400">No devices yet. Intake one to get started!</div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr className="border-b border-gray-200">
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                      Serial Number
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                      Type
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                      Worker
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">
-                      Action
-                    </th>
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b border-slate-800">
+                    <th className="px-6 py-4">Serial</th>
+                    <th className="px-6 py-4">Type</th>
+                    <th className="px-6 py-4">Make / Model</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4 text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {devices.slice(0, 5).map((device) => (
-                    <tr
-                      key={device.device_id}
-                      className="border-b border-gray-200 hover:bg-gray-50"
-                    >
-                      <td className="px-6 py-4 font-mono font-bold text-blue-600">
-                        {device.chassis_serial}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {device.device_type}
-                      </td>
-                      <td className="px-6 py-4">
-                        {getStatusBadge(device.status)}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {device.worker_id}
-                      </td>
-                      <td className="px-6 py-4">
-                        <button
-                          onClick={() => navigate(`/device/${device.device_id}`)}
-                          className="text-blue-600 hover:underline font-bold text-sm"
-                        >
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                <tbody className="divide-y divide-slate-800">
+                  {devices.slice(0, 8).map((device) => {
+                    const cfg = STATUS_CONFIG[device.status] ?? STATUS_CONFIG.intake
+                    const icon = DEVICE_ICON[device.device_type] ?? "devices"
+                    return (
+                      <tr key={device.device_id} className="hover:bg-slate-800/40 transition-colors">
+                        <td className="px-6 py-4 font-mono text-sm text-slate-200">{device.chassis_serial}</td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-slate-400 text-lg">{icon}</span>
+                            <span className="text-sm font-medium text-slate-300">{device.device_type.replace(/_/g, " ")}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-slate-300">{device.chassis_make_model}</td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold ${cfg.color}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`}></span>
+                            {cfg.label}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button
+                            onClick={() => navigate(`/device/${device.device_id}`)}
+                            className="bg-slate-100 text-slate-900 text-xs font-bold px-4 py-1.5 rounded hover:opacity-90 active:scale-95 transition-all"
+                          >
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
           )}
+
+          <div className="px-6 py-4 bg-slate-800/20 flex justify-center border-t border-slate-800">
+            <button className="text-sm font-semibold text-slate-500 hover:text-orange-500 transition-colors">
+              View All Devices
+            </button>
+          </div>
+        </div>
+
+        {/* Bottom Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          {/* Quick Action Card */}
+          <div className="lg:col-span-3 bg-slate-950 border border-slate-800 rounded-lg p-8 relative overflow-hidden group">
+            <div className="relative z-10">
+              <h4 className="text-orange-500 font-bold uppercase tracking-widest text-xs mb-4">Quick Action</h4>
+              <h3 className="text-2xl font-bold text-white mb-4" style={{ fontFamily: "Manrope, sans-serif" }}>
+                Start New Device Compliance Check
+              </h3>
+              <p className="text-slate-400 mb-6 max-w-md text-sm leading-relaxed">
+                Begin the intake process for a new donated device. Ensure all serial numbers and hardware identifiers are verified.
+              </p>
+              <button
+                onClick={() => navigate("/intake")}
+                className="bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-8 rounded flex items-center gap-2 transition-all active:scale-95"
+              >
+                Launch Intake Module
+                <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+              </button>
+            </div>
+            <div className="absolute -right-8 -bottom-8 opacity-10 scale-150 rotate-12 group-hover:rotate-0 transition-transform duration-700 pointer-events-none">
+              <span className="material-symbols-outlined text-[160px] text-white">inventory_2</span>
+            </div>
+          </div>
+
+          {/* Compliance Distribution */}
+          <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-lg p-6">
+            <h3 className="font-bold text-white mb-5" style={{ fontFamily: "Manrope, sans-serif" }}>Compliance Distribution</h3>
+            <div className="space-y-4">
+              {[
+                { label: "Mobile Units",  pct: 88 },
+                { label: "Workstations",  pct: 94 },
+                { label: "Field Tablets", pct: 72 },
+              ].map(({ label, pct }) => (
+                <div key={label}>
+                  <div className="flex justify-between text-xs font-bold mb-1 uppercase tracking-wider text-slate-400">
+                    <span>{label}</span><span>{pct}%</span>
+                  </div>
+                  <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                    <div className="bg-orange-600 h-full rounded-full" style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-8 pt-6 border-t border-slate-800 flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold text-white">96.4%</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Global Compliance Rating</p>
+              </div>
+              <span className="material-symbols-outlined text-emerald-500 text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+            </div>
+          </div>
         </div>
       </div>
     </Layout>
