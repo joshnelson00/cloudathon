@@ -22,6 +22,7 @@ export default function Layout({ children, showNav = true }: LayoutProps) {
 
   const navLinks = [
     { path: "/", label: "Dashboard", icon: "dashboard" },
+    { path: "/search", label: "Search Devices", icon: "search" },
     { path: "/intake", label: "Intake New Device", icon: "add_to_queue" },
     ...(role === "admin" ? [{ path: "/admin", label: "Admin View", icon: "admin_panel_settings" }] : []),
   ]
@@ -94,14 +95,6 @@ export default function Layout({ children, showNav = true }: LayoutProps) {
       <header className="fixed top-0 right-0 left-0 md:left-64 h-16 flex justify-between items-center px-6 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-800 shadow-lg">
         <div className="flex items-center gap-4">
           <span className="text-2xl font-black text-orange-600 md:hidden" style={{ fontFamily: "Manrope, sans-serif" }}>CityServe</span>
-          <div className="relative hidden sm:block">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
-            <input
-              className="bg-slate-900 border-none rounded-lg pl-10 pr-4 py-2 text-sm text-slate-200 focus:ring-1 focus:ring-orange-600 w-56 outline-none"
-              placeholder="Search devices..."
-              type="text"
-            />
-          </div>
         </div>
         <div className="flex items-center gap-3">
           <span className="material-symbols-outlined text-slate-400 hover:text-white cursor-pointer transition-colors">notifications</span>
