@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     allowed_origins: str = "*"
     service_endpoints_json: dict[str, str] = Field(default_factory=dict)
 
+    # Database configuration
+    use_mock_db: bool = True  # Use mock JSON-based DB by default for demo
     aws_region: str = "us-west-1"
     dynamodb_devices_table: str = "cityserve-devices"
     dynamodb_procedures_table: str = "cityserve-procedures"
