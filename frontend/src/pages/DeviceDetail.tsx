@@ -37,6 +37,7 @@ interface Device {
   status: string
   procedure_id: string
   steps_completed: CompletedStep[]
+  comp_doc?: string | null
 }
 
 export default function DeviceDetail() {
@@ -161,6 +162,7 @@ export default function DeviceDetail() {
   const progress = totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0
   const allDone = completedSteps >= totalSteps && totalSteps > 0
   const isDocumented = device?.status === "documented"
+  const canViewCompliance = isDocumented && Boolean(device?.comp_doc)
 
   // Auto-complete when all steps are done
   useEffect(() => {
@@ -201,7 +203,7 @@ export default function DeviceDetail() {
             </div>
             <div className="text-right">
               <span className="text-sm font-bold text-orange-500 uppercase tracking-widest">
-                Step {completedSteps} of {totalSteps}
+                Step {Math.min(completedSteps, totalSteps)} of {totalSteps}
               </span>
               <p className="text-slate-400 text-xs mt-1">Compliance Level: NIST 800-88</p>
             </div>
@@ -227,8 +229,9 @@ export default function DeviceDetail() {
         )}
 
         {/* Steps */}
-        <div className="space-y-6">
-          {procedures.map((step, index) => {
+        {!isDocumented && (
+          <div className="space-y-6">
+            {procedures.map((step, index) => {
             const isCompleted = device.steps_completed?.some((cs) => cs.step_id === step.id) ?? false
             const isCurrentStep = index === completedSteps
             const stepFailure = isCurrentStep ? getStepFailure(step.id, step.input_fields) : null
@@ -432,18 +435,32 @@ export default function DeviceDetail() {
                 </div>
               </div>
             )
-          })}
-        </div>
+            })}
+          </div>
+        )}
+
+        {isDocumented && (
+          <div className="mb-2 rounded-xl border border-emerald-700/40 bg-emerald-900/20 p-6 text-center">
+            <p className="text-emerald-300 font-semibold">
+              All sanitization steps are complete. This device is fully documented.
+            </p>
+          </div>
+        )}
 
         {/* Footer */}
         <div className="mt-10 py-10 text-center border-t border-slate-800">
           {isDocumented ? (
             <button
               onClick={() => navigate(`/compliance/${id}`)}
-              className="px-10 py-4 font-bold rounded-xl flex items-center gap-3 mx-auto text-lg transition-all bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 active:scale-[0.98]"
+              className={`px-10 py-4 font-bold rounded-xl flex items-center gap-3 mx-auto text-lg transition-all ${
+                canViewCompliance
+                  ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-600/20 active:scale-[0.98]"
+                  : "bg-slate-800 text-slate-400 cursor-not-allowed"
+              }`}
+              disabled={!canViewCompliance}
             >
               <span className="material-symbols-outlined">description</span>
-              Review Compliance Document
+              View Compliance Document
             </button>
           ) : completing ? (
             <div className="px-10 py-4 font-bold rounded-xl flex items-center gap-3 mx-auto text-lg bg-slate-800 text-slate-400 w-fit">

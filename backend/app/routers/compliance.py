@@ -1,6 +1,7 @@
 import os
+from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse
 
 from ..db import get_devices_table
@@ -70,3 +71,86 @@ def dashboard():
         completed=counts["documented"],
         by_type=by_type,
     )
+
+
+@router.get("/audit")
+def audit_log(limit: int = Query(default=50, le=200)):
+    """
+    Returns a chronological activity log of all step completions across every device.
+    Each entry shows who did what, on which device, and when.
+    Supports Operational Excellence — full audit trail for compliance reviews.
+    """
+    result = get_devices_table().scan()
+    items = result.get("Items", [])
+
+    events = []
+    for device in items:
+        for step in device.get("steps_completed", []):
+            events.append({
+                "timestamp":      step.get("timestamp", ""),
+                "device_id":      device.get("device_id", ""),
+                "chassis_serial": device.get("chassis_serial", ""),
+                "device_type":    device.get("device_type", ""),
+                "step_id":        step.get("step_id", ""),
+                "confirmed":      step.get("confirmed", False),
+                "notes":          step.get("notes", ""),
+            })
+
+    events.sort(key=lambda x: x["timestamp"], reverse=True)
+    return {"total": len(events), "events": events[:limit]}
+
+
+@router.get("/stats")
+def stats():
+    """
+    Returns operational statistics across all devices.
+    Feeds performance and reliability metrics for the dashboard.
+    """
+    result = get_devices_table().scan()
+    items = result.get("Items", [])
+
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    processed_today = 0
+    total_steps = 0
+    wipe_pass = 0
+    wipe_fail = 0
+    device_type_counts: dict[str, int] = {}
+
+    for item in items:
+        # Devices completed today
+        completed_at = item.get("completed_at", "")
+        if completed_at and completed_at.startswith(today):
+            processed_today += 1
+
+        # Step counts
+        steps = item.get("steps_completed", [])
+        total_steps += len(steps)
+
+        # Wipe pass/fail
+        wipe_result = item.get("wipe_result")
+        if wipe_result is True:
+            wipe_pass += 1
+        elif wipe_result is False:
+            wipe_fail += 1
+
+        # Device type breakdown
+        dtype = item.get("device_type", "unknown")
+        device_type_counts[dtype] = device_type_counts.get(dtype, 0) + 1
+
+    total = len(items)
+    documented = sum(1 for i in items if i.get("status") == "documented")
+    completion_rate = round((documented / total * 100), 1) if total > 0 else 0
+    wipe_total = wipe_pass + wipe_fail
+    pass_rate = round((wipe_pass / wipe_total * 100), 1) if wipe_total > 0 else None
+
+    return {
+        "total_devices":      total,
+        "processed_today":    processed_today,
+        "completion_rate_pct": completion_rate,
+        "wipe_pass_rate_pct": pass_rate,
+        "wipe_pass":          wipe_pass,
+        "wipe_fail":          wipe_fail,
+        "total_steps_logged": total_steps,
+        "by_device_type":     device_type_counts,
+    }
