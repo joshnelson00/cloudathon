@@ -25,15 +25,15 @@ output "ec2_public_dns" {
 }
 
 output "dynamodb_devices_table_name" {
-  value = data.aws_dynamodb_table.devices.name
+  value = aws_dynamodb_table.devices.name
 }
 
 output "dynamodb_procedures_table_name" {
-  value = data.aws_dynamodb_table.procedures.name
+  value = aws_dynamodb_table.procedures.name
 }
 
 output "dynamodb_users_table_name" {
-  value = data.aws_dynamodb_table.users.name
+  value = aws_dynamodb_table.users.name
 }
 
 output "compliance_bucket_name" {
