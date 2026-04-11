@@ -246,26 +246,32 @@ PROCEDURES = {
     },
 }
 
-# Write procedures to file
-procedures_file = data_dir / "cityserve-procedures.json"
-with open(procedures_file, "w") as f:
-    json.dump(PROCEDURES, f, indent=2)
-print(f"✓ Created {procedures_file} with {len(PROCEDURES)} procedures")
+# Table name prefixes to seed (covers both legacy and current config defaults)
+TABLE_PREFIXES = ["cityserve", "hackathon-dev"]
 
-# Create empty devices file
-devices_file = data_dir / "cityserve-devices.json"
-with open(devices_file, "w") as f:
-    json.dump({}, f, indent=2)
-print(f"✓ Created {devices_file} (empty)")
+for prefix in TABLE_PREFIXES:
+    # Write procedures to file
+    procedures_file = data_dir / f"{prefix}-procedures.json"
+    with open(procedures_file, "w") as f:
+        json.dump(PROCEDURES, f, indent=2)
+    print(f"✓ Created {procedures_file} with {len(PROCEDURES)} procedures")
 
-# Create empty users file (for compatibility)
-users_file = data_dir / "cityserve-users.json"
-with open(users_file, "w") as f:
-    json.dump({}, f, indent=2)
-print(f"✓ Created {users_file} (empty)")
+    # Create devices file (preserve existing data)
+    devices_file = data_dir / f"{prefix}-devices.json"
+    if not devices_file.exists():
+        with open(devices_file, "w") as f:
+            json.dump({}, f, indent=2)
+        print(f"✓ Created {devices_file} (empty)")
+    else:
+        print(f"✓ {devices_file} already exists (preserved)")
+
+    # Create users file (preserve existing data)
+    users_file = data_dir / f"{prefix}-users.json"
+    if not users_file.exists():
+        with open(users_file, "w") as f:
+            json.dump({}, f, indent=2)
+        print(f"✓ Created {users_file} (empty)")
+    else:
+        print(f"✓ {users_file} already exists (preserved)")
 
 print("\n✅ Mock database seeded successfully!")
-print("\nData files created:")
-print(f"  - {procedures_file}")
-print(f"  - {devices_file}")
-print(f"  - {users_file}")
