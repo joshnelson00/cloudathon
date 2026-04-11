@@ -45,6 +45,9 @@ locals {
   bucket_name            = var.frontend_bucket_name != "" ? var.frontend_bucket_name : "${local.prefix}-frontend-${data.aws_caller_identity.current.account_id}"
   compliance_bucket_name = var.compliance_bucket_name != "" ? var.compliance_bucket_name : "${local.prefix}-compliance-docs-${data.aws_caller_identity.current.account_id}"
   compliance_lambda_name = var.lambda_compliance_function_name != "" ? var.lambda_compliance_function_name : "${local.prefix}-compliance-doc-generator"
+  devices_table_name     = var.dynamodb_devices_table_name != "" ? var.dynamodb_devices_table_name : "${local.prefix}-devices"
+  procedures_table_name  = var.dynamodb_procedures_table_name != "" ? var.dynamodb_procedures_table_name : "${local.prefix}-procedures"
+  users_table_name       = var.dynamodb_users_table_name != "" ? var.dynamodb_users_table_name : "${local.prefix}-users"
 }
 
 resource "aws_security_group" "ec2" {
@@ -169,6 +172,21 @@ resource "aws_iam_role_policy" "ec2_app_access" {
     Version = "2012-10-17"
     Statement = [
       {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem",
+          "dynamodb:Query",
+          "dynamodb:Scan"
+        ]
+        Resource = [
+          aws_dynamodb_table.devices.arn,
+          aws_dynamodb_table.procedures.arn,
+          aws_dynamodb_table.users.arn
+        ]
+      },
+      {
         Effect   = "Allow"
         Action   = ["lambda:InvokeFunction"]
         Resource = [aws_lambda_function.compliance_doc_generator.arn]
@@ -218,12 +236,12 @@ resource "aws_s3_bucket_policy" "frontend_private" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect    = "Allow"
+      Effect = "Allow"
       Principal = {
         Service = "cloudfront.amazonaws.com"
       }
-      Action    = ["s3:GetObject"]
-      Resource  = ["${aws_s3_bucket.frontend.arn}/*"]
+      Action   = ["s3:GetObject"]
+      Resource = ["${aws_s3_bucket.frontend.arn}/*"]
       Condition = {
         StringEquals = {
           "aws:SourceArn" = "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.frontend.id}"
@@ -287,6 +305,63 @@ resource "aws_s3_bucket_versioning" "compliance_docs" {
   }
 }
 
+resource "aws_dynamodb_table" "devices" {
+  name         = local.devices_table_name
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "device_id"
+
+  attribute {
+    name = "device_id"
+    type = "S"
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+
+  point_in_time_recovery {
+    enabled = true
+  }
+}
+
+resource "aws_dynamodb_table" "procedures" {
+  name         = local.procedures_table_name
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "procedure_id"
+
+  attribute {
+    name = "procedure_id"
+    type = "S"
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+
+  point_in_time_recovery {
+    enabled = true
+  }
+}
+
+resource "aws_dynamodb_table" "users" {
+  name         = local.users_table_name
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "username"
+
+  attribute {
+    name = "username"
+    type = "S"
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+
+  point_in_time_recovery {
+    enabled = true
+  }
+}
+
 resource "aws_iam_role" "lambda" {
   name = "${local.prefix}-lambda-role"
 
@@ -346,6 +421,7 @@ resource "aws_lambda_function" "compliance_doc_generator" {
     variables = {
       DEVICES_TABLE_NAME    = aws_dynamodb_table.devices.name
       PROCEDURES_TABLE_NAME = aws_dynamodb_table.procedures.name
+      USERS_TABLE_NAME      = aws_dynamodb_table.users.name
       COMPLIANCE_BUCKET     = aws_s3_bucket.compliance_docs.bucket
     }
   }
