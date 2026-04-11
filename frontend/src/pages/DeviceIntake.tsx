@@ -45,7 +45,7 @@ export default function DeviceIntake() {
     navigate("/identify-drive", { state: formData })
   }
 
-  const username = localStorage.getItem("username") || "—"
+  const username = localStorage.getItem("username") || "dwight_ferris"
 
   return (
     <Layout>

@@ -36,7 +36,7 @@ interface Device {
   device_id: string
   chassis_serial: string
   device_type: string
-  chassis_make_model: string
+  make_model: string
   status: string
   procedure_id: string
   steps_completed: CompletedStep[]
@@ -242,13 +242,13 @@ export default function DeviceDetail() {
           <div className="flex justify-between items-end">
             <div>
               <h1 className="text-3xl font-extrabold text-white tracking-tight" style={{ fontFamily: "Manrope, sans-serif" }}>
-                {device.chassis_make_model} — {device.device_type.replace(/_/g, " ")} Purge Procedure
+                {device.make_model} — {device.device_type.replace(/_/g, " ")} Purge Procedure
               </h1>
               <p className="text-slate-400 mt-2 flex items-center gap-4 text-sm">
                 <span className="bg-slate-800 px-2 py-0.5 rounded font-mono text-xs">Device ID: {device.device_id.slice(0, 8)}...</span>
                 <span className="flex items-center gap-1">
                   <span className="material-symbols-outlined text-sm">person</span>
-                  {localStorage.getItem("username") || "Worker"}
+                  {localStorage.getItem("username") || "dwight_ferris"}
                 </span>
               </p>
             </div>

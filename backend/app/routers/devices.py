@@ -411,8 +411,10 @@ def complete_device(
     proc_result = get_procedures_table().get_item(Key={"procedure_id": item["procedure_id"]})
     procedure = proc_result.get("Item", {})
 
-    # Get full technician details (current_user is None if no token provided)
-    user_info = _get_full_user(current_user["username"]) if current_user else {}
+    # Get full technician details — fall back to demo user if not logged in
+    DEMO_USER = {"username": "dwight_ferris", "fname": "Dwight", "lname": "Ferris",
+                 "email": "dwight@cityserve.local", "role": "worker"}
+    user_info = _get_full_user(current_user["username"]) if current_user else DEMO_USER
     now = datetime.now(timezone.utc).isoformat()
 
     VERIFICATION_METHODS = {

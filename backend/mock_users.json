@@ -33,6 +33,14 @@
       "role": "worker"
     },
     {
+      "username": "dwight_ferris",
+      "fname": "Dwight",
+      "lname": "Ferris",
+      "email": "dwight@cityserve.local",
+      "password": "Dwight@2024!",
+      "role": "worker"
+    },
+    {
       "username": "emma_brown",
       "fname": "Emma",
       "lname": "Brown",

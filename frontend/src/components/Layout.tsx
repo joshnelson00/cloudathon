@@ -52,7 +52,7 @@ export default function Layout({ children, showNav = true }: Readonly<LayoutProp
   }
 
   const role = localStorage.getItem("role")
-  const username = localStorage.getItem("username")
+  const username = localStorage.getItem("username") || "dwight_ferris"
 
   const navLinks = [
     { path: "/", label: "Dashboard", icon: "dashboard" },
