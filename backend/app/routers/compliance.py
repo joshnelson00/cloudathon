@@ -1,0 +1,57 @@
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import RedirectResponse
+
+from ..auth import get_current_user
+from ..db import get_devices_table, get_s3
+from ..models import ComplianceResponse, DashboardResponse
+from ..config import get_settings
+
+settings = get_settings()
+router = APIRouter()
+
+
+@router.get("/compliance/{device_id}", response_model=ComplianceResponse)
+def get_compliance(device_id: str, user: dict = Depends(get_current_user)):
+    result = get_devices_table().get_item(Key={"device_id": device_id})
+    item = result.get("Item")
+    if not item:
+        raise HTTPException(status_code=404, detail="Device not found")
+
+    url = item.get("compliance_doc_url")
+    if not url:
+        raise HTTPException(
+            status_code=404,
+            detail="Compliance document not yet generated. Complete all steps first.",
+        )
+
+    return ComplianceResponse(
+        device_id=device_id,
+        compliance_doc_url=url,
+        generated_at=item.get("intake_timestamp"),
+    )
+
+
+@router.get("/dashboard", response_model=DashboardResponse)
+def dashboard(user: dict = Depends(get_current_user)):
+    result = get_devices_table().scan()
+    items = result.get("Items", [])
+
+    counts = {"intake": 0, "in_progress": 0, "verified": 0, "documented": 0}
+    by_type: dict[str, int] = {}
+
+    for item in items:
+        status = item.get("status", "intake")
+        if status in counts:
+            counts[status] += 1
+
+        dtype = item.get("device_type", "unknown")
+        by_type[dtype] = by_type.get(dtype, 0) + 1
+
+    return DashboardResponse(
+        total=len(items),
+        intake=counts["intake"],
+        in_progress=counts["in_progress"],
+        verified=counts["verified"],
+        documented=counts["documented"],
+        by_type=by_type,
+    )
