@@ -19,13 +19,15 @@ from ..models import (
 router = APIRouter()
 
 DEVICE_TYPE_TO_PROCEDURE = {
-    "laptop_hdd":     "hdd_purge_v1",
-    "laptop_ssd":     "ssd_secure_erase_v1",
-    "desktop_hdd":    "hdd_purge_v1",
-    "desktop_ssd":    "ssd_secure_erase_v1",
-    "tablet":         "tablet_factory_reset_v1",
-    "drive_external": "hdd_purge_v1",
-    "no_storage":     "no_storage_clear_v1",
+    "laptop_hdd":          "hdd_purge_v1",
+    "laptop_ssd":          "ssd_secure_erase_v1",
+    "desktop_hdd":         "hdd_purge_v1",
+    "desktop_ssd":         "ssd_secure_erase_v1",
+    "tablet":              "tablet_factory_reset_v1",
+    "drive_external":      "hdd_purge_v1",
+    "drive_external_hdd":  "hdd_purge_v1",
+    "drive_external_ssd":  "ssd_secure_erase_v1",
+    "no_storage":          "no_storage_clear_v1",
 }
 
 
@@ -47,9 +49,9 @@ def intake_device(
 
     item = {
         "device_id":         device_id,
-        "serial_number":     body.serial_number,
+        "chassis_serial":    body.chassis_serial,
         "device_type":       body.device_type,
-        "make_model":        body.make_model,
+        "chassis_make_model": body.chassis_make_model,
         "intake_timestamp":  now,
         "worker_id":         user["username"],
         "status":            "intake",
@@ -88,9 +90,9 @@ def get_device(device_id: str, user: dict = Depends(get_current_user)):
 
     return DeviceDetail(
         device_id=item["device_id"],
-        serial_number=item["serial_number"],
+        chassis_serial=item["chassis_serial"],
         device_type=item["device_type"],
-        make_model=item["make_model"],
+        chassis_make_model=item["chassis_make_model"],
         intake_timestamp=item["intake_timestamp"],
         worker_id=item["worker_id"],
         status=item["status"],

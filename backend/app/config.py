@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     aws_region: str = "us-west-1"
     dynamodb_devices_table: str = "cityserve-devices"
     dynamodb_procedures_table: str = "cityserve-procedures"
+    dynamodb_users_table: str = "cityserve-users"
     s3_compliance_bucket: str = ""
 
     jwt_secret_key: str = "hackathon-secret-key-change-in-prod"

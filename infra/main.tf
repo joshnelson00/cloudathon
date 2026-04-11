@@ -45,6 +45,8 @@ locals {
   bucket_name            = var.frontend_bucket_name != "" ? var.frontend_bucket_name : "${local.prefix}-frontend-${data.aws_caller_identity.current.account_id}"
   devices_table_name     = var.dynamodb_devices_table_name != "" ? var.dynamodb_devices_table_name : "${local.prefix}-devices"
   procedures_table_name  = var.dynamodb_procedures_table_name != "" ? var.dynamodb_procedures_table_name : "${local.prefix}-procedures"
+  users_table_name       = var.dynamodb_users_table_name != "" ? var.dynamodb_users_table_name : "${local.prefix}-users"
+  compliance_bucket_name = var.compliance_bucket_name != "" ? var.compliance_bucket_name : "${local.prefix}-compliance-docs-${data.aws_caller_identity.current.account_id}"
   compliance_lambda_name = var.lambda_compliance_function_name != "" ? var.lambda_compliance_function_name : "${local.prefix}-compliance-doc-generator"
 }
 
@@ -180,7 +182,8 @@ resource "aws_iam_role_policy" "ec2_app_access" {
         ]
         Resource = [
           aws_dynamodb_table.devices.arn,
-          aws_dynamodb_table.procedures.arn
+          aws_dynamodb_table.procedures.arn,
+          aws_dynamodb_table.users.arn
         ]
       },
       {
@@ -194,7 +197,9 @@ resource "aws_iam_role_policy" "ec2_app_access" {
           "s3:GetObject",
           "s3:PutObject"
         ]
-        Resource = ["${aws_s3_bucket.frontend.arn}/${var.compliance_docs_prefix}*"]
+        Resource = [
+          "${aws_s3_bucket.compliance_docs.arn}/*"
+        ]
       }
     ]
   })
@@ -303,11 +308,45 @@ resource "aws_dynamodb_table" "procedures" {
 
   attribute {
     name = "procedure_id"
+    type = "N"
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "aws_dynamodb_table" "users" {
+  name         = local.users_table_name
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "user_id"
+
+  attribute {
+    name = "user_id"
     type = "S"
   }
 
   lifecycle {
     prevent_destroy = true
+  }
+}
+
+resource "aws_s3_bucket" "compliance_docs" {
+  bucket = local.compliance_bucket_name
+}
+
+resource "aws_s3_bucket_public_access_block" "compliance_docs" {
+  bucket                  = aws_s3_bucket.compliance_docs.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_s3_bucket_versioning" "compliance_docs" {
+  bucket = aws_s3_bucket.compliance_docs.id
+  versioning_configuration {
+    status = "Enabled"
   }
 }
 
@@ -344,11 +383,13 @@ resource "aws_iam_role_policy" "lambda_data_access" {
           "dynamodb:GetItem",
           "dynamodb:PutItem",
           "dynamodb:UpdateItem",
-          "dynamodb:Query"
+          "dynamodb:Query",
+          "dynamodb:Scan"
         ]
         Resource = [
           aws_dynamodb_table.devices.arn,
-          aws_dynamodb_table.procedures.arn
+          aws_dynamodb_table.procedures.arn,
+          aws_dynamodb_table.users.arn
         ]
       },
       {
@@ -357,7 +398,7 @@ resource "aws_iam_role_policy" "lambda_data_access" {
           "s3:GetObject",
           "s3:PutObject"
         ]
-        Resource = ["${aws_s3_bucket.frontend.arn}/${var.compliance_docs_prefix}*"]
+        Resource = ["${aws_s3_bucket.compliance_docs.arn}/*"]
       }
     ]
   })
@@ -383,8 +424,8 @@ resource "aws_lambda_function" "compliance_doc_generator" {
     variables = {
       DEVICES_TABLE_NAME    = aws_dynamodb_table.devices.name
       PROCEDURES_TABLE_NAME = aws_dynamodb_table.procedures.name
-      COMPLIANCE_BUCKET     = aws_s3_bucket.frontend.bucket
-      COMPLIANCE_PREFIX     = var.compliance_docs_prefix
+      USERS_TABLE_NAME      = aws_dynamodb_table.users.name
+      COMPLIANCE_BUCKET     = aws_s3_bucket.compliance_docs.bucket
     }
   }
 
