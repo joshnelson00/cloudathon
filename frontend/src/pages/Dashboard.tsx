@@ -13,13 +13,13 @@ interface DeviceStats {
 
 interface Device {
   device_id: string
-  chassis_serial: string
-  device_type: string
+  chassis_serial?: string
+  device_type?: string
   make_model?: string
   chassis_make_model?: string
-  status: string
-  worker_id: string
-  intake_timestamp: string
+  status?: string
+  worker_id?: string
+  intake_timestamp?: string
 }
 
 interface DeviceCreateResponse {
@@ -219,15 +219,17 @@ export default function Dashboard() {
                 </thead>
                 <tbody className="divide-y divide-slate-800">
                   {devices.slice(0, 8).map((device) => {
-                    const cfg = STATUS_CONFIG[device.status] ?? STATUS_CONFIG.intake
-                    const icon = DEVICE_ICON[device.device_type] ?? "devices"
+                    const status = device.status || "intake"
+                    const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.intake
+                    const deviceType = device.device_type || "unknown"
+                    const icon = DEVICE_ICON[deviceType] ?? "devices"
                     return (
                       <tr key={device.device_id} className="hover:bg-slate-800/40 transition-colors">
-                        <td className="px-6 py-4 font-mono text-sm text-slate-200">{device.chassis_serial}</td>
+                        <td className="px-6 py-4 font-mono text-sm text-slate-200">{device.chassis_serial || "-"}</td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
                             <span className="material-symbols-outlined text-slate-400 text-lg">{icon}</span>
-                            <span className="text-sm font-medium text-slate-300">{device.device_type.replace(/_/g, " ")}</span>
+                            <span className="text-sm font-medium text-slate-300">{deviceType.replace(/_/g, " ")}</span>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-sm text-slate-300">{device.make_model || device.chassis_make_model || "-"}</td>
