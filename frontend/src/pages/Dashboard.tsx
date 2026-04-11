@@ -20,11 +20,10 @@ interface DeviceStats {
 
 interface Device {
   device_id: string
-  serial_number: string
+  chassis_serial: string
   device_type: string
   make_model: string
   status: string
-  worker_id: string
   intake_timestamp: string
 }
 
@@ -218,7 +217,7 @@ export default function Dashboard() {
                       className="border-b border-gray-200 hover:bg-gray-50"
                     >
                       <td className="px-6 py-4 font-mono font-bold text-blue-600">
-                        {device.serial_number}
+                        {device.chassis_serial}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-600">
                         {device.device_type}
