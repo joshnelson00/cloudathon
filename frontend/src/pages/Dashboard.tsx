@@ -5,6 +5,7 @@ import {
   FiZap,
   FiCheckCircle,
   FiPlus,
+  FiSearch,
 } from "react-icons/fi"
 import { api } from "../api/client"
 import Layout from "../components/Layout"
@@ -96,6 +97,13 @@ export default function Dashboard() {
             <p className="text-gray-600">CityServe Device Destruction System</p>
           </div>
           <div className="flex gap-3">
+            <button
+              onClick={() => navigate("/search")}
+              className="border border-gray-700 text-gray-700 px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition flex items-center gap-2"
+            >
+              <FiSearch className="w-5 h-5" />
+              Search Devices
+            </button>
             <button
               onClick={() => navigate("/intake")}
               className="bg-gray-700 text-white px-6 py-3 rounded-lg font-bold hover:bg-gray-800 transition flex items-center gap-2"
