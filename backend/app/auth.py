@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 import json
 import os
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
@@ -10,6 +11,7 @@ from pydantic import BaseModel
 
 from .config import get_settings
 from .models import UserCreateRequest, UserCreateResponse
+from .db import get_users_table
 
 settings = get_settings()
 
@@ -21,6 +23,7 @@ router = APIRouter()
 class LoginRequest(BaseModel):
     username: str
     password: str
+
 
 def load_mock_users() -> dict[str, dict]:
     """Load users from mock_users.json for local development."""
@@ -75,11 +78,31 @@ def require_admin(user: dict = Depends(get_current_user)) -> dict:
 
 @router.post("/login")
 def login(body: LoginRequest):
+    # First check hardcoded users
     user = USERS.get(body.username)
-    if not user or not pwd_context.verify(body.password, user["hashed_password"]):
-        raise HTTPException(status_code=401, detail="Invalid username or password")
-    token = create_token(user["username"], user["role"])
-    return {"access_token": token, "token_type": "bearer"}
+    if user and pwd_context.verify(body.password, user["hashed_password"]):
+        token = create_token(user["username"], user["role"])
+        return {"access_token": token, "token_type": "bearer"}
+
+    # Then check DynamoDB users table
+    try:
+        table = get_users_table()
+        response = table.scan(
+            FilterExpression="username = :username",
+            ExpressionAttributeValues={":username": body.username}
+        )
+
+        if response["Items"]:
+            db_user = response["Items"][0]
+            if pwd_context.verify(body.password, db_user.get("password", "")):
+                roles = db_user.get("role", ["worker"])
+                token = create_token(db_user["username"], roles[0] if roles else "worker")
+                return {"access_token": token, "token_type": "bearer"}
+    except Exception:
+        # If DynamoDB is not available, only check hardcoded users
+        pass
+
+    raise HTTPException(status_code=401, detail="Invalid username or password")
 
 
 @router.post("/logout")
@@ -89,6 +112,28 @@ def logout():
 
 @router.get("/me")
 def me(user: dict = Depends(get_current_user)):
+    try:
+        # Try to get full user details from DynamoDB
+        table = get_users_table()
+        response = table.scan(
+            FilterExpression="username = :username",
+            ExpressionAttributeValues={":username": user["username"]}
+        )
+
+        if response["Items"]:
+            db_user = response["Items"][0]
+            return {
+                "user_id": db_user.get("user_id"),
+                "username": db_user.get("username"),
+                "fname": db_user.get("fname", ""),
+                "lname": db_user.get("lname", ""),
+                "email": db_user.get("email", ""),
+                "role": db_user.get("role", ["worker"]),
+            }
+    except Exception:
+        # Fall back to token info if DynamoDB is unavailable
+        pass
+
     return {"username": user["username"], "role": user["role"]}
 
 
@@ -100,10 +145,50 @@ def create_user(
     """
     Create a new user (admin only).
 
-    TODO: Implement user creation by:
-    1. Validate username is not already in USERS dict
-    2. Hash the password using pwd_context.hash()
-    3. Add new user to USERS dict with hashed password
-    4. Return success response
+    Adds user to DynamoDB users table with hashed password.
     """
-    raise HTTPException(status_code=501, detail="User creation not yet implemented")
+    # Validate username is not already in use
+    if body.username in USERS:
+        raise HTTPException(status_code=400, detail="Username already exists in system")
+
+    try:
+        table = get_users_table()
+
+        # Check if username already exists in DynamoDB
+        response = table.scan(
+            FilterExpression="username = :username",
+            ExpressionAttributeValues={":username": body.username}
+        )
+
+        if response["Items"]:
+            raise HTTPException(status_code=400, detail="Username already exists")
+
+        # Hash password and create user
+        user_id = str(uuid.uuid4())
+        hashed_password = pwd_context.hash(body.password)
+
+        item = {
+            "user_id": user_id,
+            "username": body.username,
+            "fname": body.fname,
+            "lname": body.lname,
+            "email": body.email,
+            "password": hashed_password,
+            "role": body.role,
+        }
+
+        table.put_item(Item=item)
+
+        return UserCreateResponse(
+            user_id=user_id,
+            username=body.username,
+            fname=body.fname,
+            lname=body.lname,
+            email=body.email,
+            role=body.role,
+            message=f"User {body.username} created successfully",
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create user: {str(e)}")
