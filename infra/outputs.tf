@@ -47,3 +47,15 @@ output "lambda_compliance_function_name" {
 output "lambda_compliance_function_arn" {
   value = aws_lambda_function.compliance_doc_generator.arn
 }
+
+output "athena_results_bucket_name" {
+  value = aws_s3_bucket.athena_results.bucket
+}
+
+output "athena_workgroup_name" {
+  value = aws_athena_workgroup.analytics.name
+}
+
+output "athena_database_name" {
+  value = aws_glue_catalog_database.analytics.name
+}

@@ -6,7 +6,9 @@ import DeviceDetail from "./pages/DeviceDetail"
 import ComplianceRecord from "./pages/ComplianceRecord"
 import SearchDevices from "./pages/SearchDevices"
 import AllDevices from "./pages/AllDevices"
+import Analytics from "./pages/Analytics"
 import AdminDashboard from "./pages/AdminDashboard"
+import DriveTypeIdentification from "./pages/DriveTypeIdentification"
 
 export default function App() {
   const [ready, setReady] = useState(false)
@@ -23,11 +25,13 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/search" element={<SearchDevices />} />
+        <Route path="/analytics" element={<Analytics />} />
         <Route path="/devices" element={<AllDevices />} />
         <Route path="/intake" element={<DeviceIntake />} />
         <Route path="/device/:id" element={<DeviceDetail />} />
         <Route path="/compliance/:id" element={<ComplianceRecord />} />
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/identify-drive" element={<DriveTypeIdentification />} />
       </Routes>
     </Router>
   )

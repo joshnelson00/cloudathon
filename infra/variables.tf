@@ -77,3 +77,18 @@ variable "compliance_docs_prefix" {
     error_message = "compliance_docs_prefix must be non-empty and end with '/'."
   }
 }
+
+variable "athena_results_bucket_name" {
+  type    = string
+  default = ""
+}
+
+variable "athena_workgroup_name" {
+  type    = string
+  default = ""
+}
+
+variable "athena_database_name" {
+  type    = string
+  default = ""
+}

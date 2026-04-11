@@ -4,6 +4,7 @@
     "chassis_serial": "pioeaenrg",
     "device_type": "laptop_hdd",
     "make_model": ";kamnerg",
+    "os": "",
     "intake_timestamp": "2026-04-11T14:36:12.511193+00:00",
     "status": "intake",
     "procedure_id": "hdd_purge_v1",
@@ -16,6 +17,7 @@
     "chassis_serial": "TEST123",
     "device_type": "laptop_hdd",
     "make_model": "Dell Latitude 5520",
+    "os": "",
     "intake_timestamp": "2026-04-11T14:37:40.908801+00:00",
     "status": "documented",
     "procedure_id": "hdd_purge_v1",
@@ -110,6 +112,7 @@
     "chassis_serial": "wfg",
     "device_type": "laptop_hdd",
     "make_model": "wer",
+    "os": "",
     "intake_timestamp": "2026-04-11T14:42:51.190925+00:00",
     "status": "intake",
     "procedure_id": "hdd_purge_v1",
@@ -122,6 +125,7 @@
     "chassis_serial": "test123",
     "device_type": "laptop_hdd",
     "make_model": "test456",
+    "os": "",
     "intake_timestamp": "2026-04-11T14:46:46.968337+00:00",
     "status": "documented",
     "procedure_id": "hdd_purge_v1",
@@ -216,6 +220,7 @@
     "chassis_serial": "test123",
     "device_type": "laptop_hdd",
     "make_model": "12",
+    "os": "",
     "intake_timestamp": "2026-04-11T14:53:20.189532+00:00",
     "status": "documented",
     "procedure_id": "hdd_purge_v1",
@@ -304,5 +309,39 @@
     "wipe_tool_version": "12",
     "completed_by": "unknown",
     "completed_at": "2026-04-11T14:53:57.575908+00:00"
+  },
+  "5c3cc2c9-3ed8-4296-80d4-c5af4b5e2836": {
+    "device_id": "5c3cc2c9-3ed8-4296-80d4-c5af4b5e2836",
+    "chassis_serial": "SN-39032",
+    "device_type": "laptop_ssd_nvme",
+    "make_model": "Make Model",
+    "os": "macos_apple",
+    "intake_timestamp": "2026-04-11T15:31:38.928967+00:00",
+    "status": "intake",
+    "procedure_id": "nvme_ssd_format_v1",
+    "steps_completed": [],
+    "comp_doc": null,
+    "wipe_result": null
+  },
+  "07f9433c-20e2-4d46-a029-dbaabb61e9ac": {
+    "device_id": "07f9433c-20e2-4d46-a029-dbaabb61e9ac",
+    "chassis_serial": "SN-39032",
+    "device_type": "laptop_ssd_nvme",
+    "make_model": "Make Model",
+    "os": "macos_apple",
+    "intake_timestamp": "2026-04-11T15:33:58.445442+00:00",
+    "status": "in_progress",
+    "procedure_id": "nvme_ssd_format_v1",
+    "steps_completed": [
+      {
+        "step_id": "nvme_1",
+        "confirmed": true,
+        "notes": "",
+        "input_data": {},
+        "timestamp": "2026-04-11T15:34:05.782612+00:00"
+      }
+    ],
+    "comp_doc": null,
+    "wipe_result": null
   }
 }

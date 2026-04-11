@@ -14,34 +14,39 @@
       },
       {
         "id": "hdd_2",
-        "instruction": "Physically locate the drive label and record the drive details below. These fields are required for the NIST compliance certificate.",
+        "instruction": "Record hard drive details. Open the wipe tool \u2014 all values are shown on the device selection screen before the wipe starts.",
         "requires_confirmation": true,
         "input_fields": [
           {
             "name": "drive_serial",
             "label": "Drive Serial Number",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Shown on the wipe tool's device list before the wipe starts. Also printed on the physical drive label."
           },
           {
             "name": "drive_manufacturer",
             "label": "Drive Manufacturer",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Brand shown by the wipe tool (e.g. Samsung, WD, Seagate, Crucial). Also on the drive label."
           },
           {
             "name": "drive_model",
             "label": "Drive Model",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Model number shown by the wipe tool (e.g. MZ-V7S1T0B). Also on the drive label."
           },
           {
             "name": "drive_capacity_gb",
             "label": "Drive Capacity (GB)",
             "type": "number",
-            "required": true
+            "required": true,
+            "hint": "Shown by the wipe tool and in BIOS. Numbers only \u2014 e.g. 512 for 512 GB, 1000 for 1 TB."
           }
-        ]
+        ],
+        "wipe_api_prefill": true
       },
       {
         "id": "hdd_3",
@@ -64,21 +69,25 @@
             "name": "wipe_tool_name",
             "label": "Tool Name (e.g., DBAN)",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Name of the software performing the wipe (e.g. nwipe, DBAN, Blancco, Eraser)."
           },
           {
             "name": "wipe_tool_version",
             "label": "Tool Version (e.g., 2.3.0)",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Shown in the tool's title bar or About screen (e.g. 0.36)."
           }
-        ]
+        ],
+        "wipe_api_prefill": true
       },
       {
         "id": "hdd_6",
         "instruction": "Run a single-pass overwrite on the drive. Do NOT interrupt the process. Per NIST SP 800-88r2 \u00a73.1.1, a single overwrite pass is sufficient.",
         "requires_confirmation": true,
-        "input_fields": null
+        "input_fields": null,
+        "wipe_api_sim": true
       },
       {
         "id": "hdd_7",
@@ -93,7 +102,15 @@
               "pass",
               "fail"
             ],
-            "required": true
+            "required": true,
+            "hint": "Did the tool complete successfully? Select Pass if it finished with no errors."
+          },
+          {
+            "name": "verification_method",
+            "label": "Verification Method (e.g., Tool completion log, Visual inspection)",
+            "type": "text",
+            "required": true,
+            "hint": "How you confirmed the wipe worked \u2014 e.g. 'Tool completion log' or 'Reboot \u2014 no OS detected'."
           }
         ]
       },
@@ -126,34 +143,39 @@
       },
       {
         "id": "ssd_2",
-        "instruction": "Record the drive details below for the compliance certificate.",
+        "instruction": "Record SATA SSD details. Open the wipe tool \u2014 all values are shown on the device selection screen before the wipe starts.",
         "requires_confirmation": true,
         "input_fields": [
           {
             "name": "drive_serial",
             "label": "Drive Serial Number",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Shown on the wipe tool's device list before the wipe starts. Also printed on the physical drive label."
           },
           {
             "name": "drive_manufacturer",
             "label": "Drive Manufacturer",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Brand shown by the wipe tool (e.g. Samsung, WD, Seagate, Crucial). Also on the drive label."
           },
           {
             "name": "drive_model",
             "label": "Drive Model",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Model number shown by the wipe tool (e.g. MZ-V7S1T0B). Also on the drive label."
           },
           {
             "name": "drive_capacity_gb",
             "label": "Drive Capacity (GB)",
             "type": "number",
-            "required": true
+            "required": true,
+            "hint": "Shown by the wipe tool and in BIOS. Numbers only \u2014 e.g. 512 for 512 GB, 1000 for 1 TB."
           }
-        ]
+        ],
+        "wipe_api_prefill": true
       },
       {
         "id": "ssd_3",
@@ -176,21 +198,25 @@
             "name": "wipe_tool_name",
             "label": "Tool Name",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Name of the software performing the wipe (e.g. nwipe, DBAN, Blancco, Eraser)."
           },
           {
             "name": "wipe_tool_version",
             "label": "Tool Version",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Shown in the tool's title bar or About screen (e.g. 0.36)."
           }
-        ]
+        ],
+        "wipe_api_prefill": true
       },
       {
         "id": "ssd_6",
         "instruction": "Issue the ATA Secure Erase command.",
         "requires_confirmation": true,
-        "input_fields": null
+        "input_fields": null,
+        "wipe_api_sim": true
       },
       {
         "id": "ssd_7",
@@ -205,7 +231,15 @@
               "pass",
               "fail"
             ],
-            "required": true
+            "required": true,
+            "hint": "Did the tool complete successfully? Select Pass if it finished with no errors."
+          },
+          {
+            "name": "verification_method",
+            "label": "Verification Method (e.g., Tool completion log, Visual inspection)",
+            "type": "text",
+            "required": true,
+            "hint": "How you confirmed the wipe worked \u2014 e.g. 'Tool completion log' or 'Reboot \u2014 no OS detected'."
           }
         ]
       },
@@ -238,34 +272,39 @@
       },
       {
         "id": "nvme_2",
-        "instruction": "Record M.2 drive details.",
+        "instruction": "Record M.2 drive details. Open the wipe tool \u2014 all values are shown on the device selection screen before the wipe starts.",
         "requires_confirmation": true,
         "input_fields": [
           {
             "name": "drive_serial",
             "label": "Drive Serial Number",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Shown on the wipe tool's device list before the wipe starts. Also printed on the physical drive label."
           },
           {
             "name": "drive_manufacturer",
             "label": "Drive Manufacturer",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Brand shown by the wipe tool (e.g. Samsung, WD, Seagate, Crucial). Also on the drive label."
           },
           {
             "name": "drive_model",
             "label": "Drive Model",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Model number shown by the wipe tool (e.g. MZ-V7S1T0B). Also on the drive label."
           },
           {
             "name": "drive_capacity_gb",
             "label": "Drive Capacity (GB)",
             "type": "number",
-            "required": true
+            "required": true,
+            "hint": "Shown by the wipe tool and in BIOS. Numbers only \u2014 e.g. 512 for 512 GB, 1000 for 1 TB."
           }
-        ]
+        ],
+        "wipe_api_prefill": true
       },
       {
         "id": "nvme_3",
@@ -288,21 +327,25 @@
             "name": "wipe_tool_name",
             "label": "Tool Name",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Name of the software performing the wipe (e.g. nwipe, DBAN, Blancco, Eraser)."
           },
           {
             "name": "wipe_tool_version",
             "label": "Tool Version",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Shown in the tool's title bar or About screen (e.g. 0.36)."
           }
-        ]
+        ],
+        "wipe_api_prefill": true
       },
       {
         "id": "nvme_6",
         "instruction": "Run: nvme format /dev/nvme0 --ses=1",
         "requires_confirmation": true,
-        "input_fields": null
+        "input_fields": null,
+        "wipe_api_sim": true
       },
       {
         "id": "nvme_7",
@@ -317,7 +360,15 @@
               "pass",
               "fail"
             ],
-            "required": true
+            "required": true,
+            "hint": "Did the tool complete successfully? Select Pass if it finished with no errors."
+          },
+          {
+            "name": "verification_method",
+            "label": "Verification Method (e.g., Tool completion log, Visual inspection)",
+            "type": "text",
+            "required": true,
+            "hint": "How you confirmed the wipe worked \u2014 e.g. 'Tool completion log' or 'Reboot \u2014 no OS detected'."
           }
         ]
       },
@@ -351,25 +402,29 @@
             "name": "drive_serial",
             "label": "Device Serial Number",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Shown on the wipe tool's device list before the wipe starts. Also printed on the physical drive label."
           },
           {
             "name": "drive_manufacturer",
             "label": "Manufacturer",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Brand shown by the wipe tool (e.g. Samsung, WD, Seagate, Crucial). Also on the drive label."
           },
           {
             "name": "drive_model",
             "label": "Model",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Model number shown by the wipe tool (e.g. MZ-V7S1T0B). Also on the drive label."
           },
           {
             "name": "drive_capacity_gb",
             "label": "Storage Capacity (GB)",
             "type": "number",
-            "required": true
+            "required": true,
+            "hint": "Shown by the wipe tool and in BIOS. Numbers only \u2014 e.g. 512 for 512 GB, 1000 for 1 TB."
           }
         ]
       },
@@ -389,7 +444,8 @@
         "id": "tab_4",
         "instruction": "Confirm and wait for reset to complete.",
         "requires_confirmation": true,
-        "input_fields": null
+        "input_fields": null,
+        "wipe_api_sim": true
       },
       {
         "id": "tab_5",
@@ -404,7 +460,15 @@
               "pass",
               "fail"
             ],
-            "required": true
+            "required": true,
+            "hint": "Did the tool complete successfully? Select Pass if it finished with no errors."
+          },
+          {
+            "name": "verification_method",
+            "label": "Verification Method (e.g., Tool completion log, Visual inspection)",
+            "type": "text",
+            "required": true,
+            "hint": "How you confirmed the wipe worked \u2014 e.g. 'Tool completion log' or 'Reboot \u2014 no OS detected'."
           }
         ]
       },
@@ -431,34 +495,39 @@
       },
       {
         "id": "exthdd_2",
-        "instruction": "Record drive details.",
+        "instruction": "Record external drive details. Open the wipe tool \u2014 all values are shown on the device selection screen before the wipe starts.",
         "requires_confirmation": true,
         "input_fields": [
           {
             "name": "drive_serial",
             "label": "Drive Serial Number",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Shown on the wipe tool's device list before the wipe starts. Also printed on the physical drive label."
           },
           {
             "name": "drive_manufacturer",
             "label": "Manufacturer",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Brand shown by the wipe tool (e.g. Samsung, WD, Seagate, Crucial). Also on the drive label."
           },
           {
             "name": "drive_model",
             "label": "Model",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Model number shown by the wipe tool (e.g. MZ-V7S1T0B). Also on the drive label."
           },
           {
             "name": "drive_capacity_gb",
             "label": "Capacity (GB)",
             "type": "number",
-            "required": true
+            "required": true,
+            "hint": "Shown by the wipe tool and in BIOS. Numbers only \u2014 e.g. 512 for 512 GB, 1000 for 1 TB."
           }
-        ]
+        ],
+        "wipe_api_prefill": true
       },
       {
         "id": "exthdd_3",
@@ -469,13 +538,15 @@
             "name": "wipe_tool_name",
             "label": "Tool Name",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Name of the software performing the wipe (e.g. nwipe, DBAN, Blancco, Eraser)."
           },
           {
             "name": "wipe_tool_version",
             "label": "Tool Version",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Shown in the tool's title bar or About screen (e.g. 0.36)."
           }
         ]
       },
@@ -483,7 +554,8 @@
         "id": "exthdd_4",
         "instruction": "Run single-pass overwrite.",
         "requires_confirmation": true,
-        "input_fields": null
+        "input_fields": null,
+        "wipe_api_sim": true
       },
       {
         "id": "exthdd_5",
@@ -498,9 +570,18 @@
               "pass",
               "fail"
             ],
-            "required": true
+            "required": true,
+            "hint": "Did the tool complete successfully? Select Pass if it finished with no errors."
+          },
+          {
+            "name": "verification_method",
+            "label": "Verification Method (e.g., Tool completion log, Visual inspection)",
+            "type": "text",
+            "required": true,
+            "hint": "How you confirmed the wipe worked \u2014 e.g. 'Tool completion log' or 'Reboot \u2014 no OS detected'."
           }
-        ]
+        ],
+        "wipe_api_prefill": true
       },
       {
         "id": "exthdd_6",
@@ -525,34 +606,39 @@
       },
       {
         "id": "extssd_2",
-        "instruction": "Record drive details.",
+        "instruction": "Record external SSD details. Open the wipe tool \u2014 all values are shown on the device selection screen before the wipe starts.",
         "requires_confirmation": true,
         "input_fields": [
           {
             "name": "drive_serial",
             "label": "Drive Serial Number",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Shown on the wipe tool's device list before the wipe starts. Also printed on the physical drive label."
           },
           {
             "name": "drive_manufacturer",
             "label": "Manufacturer",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Brand shown by the wipe tool (e.g. Samsung, WD, Seagate, Crucial). Also on the drive label."
           },
           {
             "name": "drive_model",
             "label": "Model",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Model number shown by the wipe tool (e.g. MZ-V7S1T0B). Also on the drive label."
           },
           {
             "name": "drive_capacity_gb",
             "label": "Capacity (GB)",
             "type": "number",
-            "required": true
+            "required": true,
+            "hint": "Shown by the wipe tool and in BIOS. Numbers only \u2014 e.g. 512 for 512 GB, 1000 for 1 TB."
           }
-        ]
+        ],
+        "wipe_api_prefill": true
       },
       {
         "id": "extssd_3",
@@ -563,13 +649,15 @@
             "name": "wipe_tool_name",
             "label": "Tool Name",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Name of the software performing the wipe (e.g. nwipe, DBAN, Blancco, Eraser)."
           },
           {
             "name": "wipe_tool_version",
             "label": "Tool Version",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Shown in the tool's title bar or About screen (e.g. 0.36)."
           }
         ]
       },
@@ -577,7 +665,8 @@
         "id": "extssd_4",
         "instruction": "Run secure erase or overwrite.",
         "requires_confirmation": true,
-        "input_fields": null
+        "input_fields": null,
+        "wipe_api_sim": true
       },
       {
         "id": "extssd_5",
@@ -592,9 +681,18 @@
               "pass",
               "fail"
             ],
-            "required": true
+            "required": true,
+            "hint": "Did the tool complete successfully? Select Pass if it finished with no errors."
+          },
+          {
+            "name": "verification_method",
+            "label": "Verification Method (e.g., Tool completion log, Visual inspection)",
+            "type": "text",
+            "required": true,
+            "hint": "How you confirmed the wipe worked \u2014 e.g. 'Tool completion log' or 'Reboot \u2014 no OS detected'."
           }
-        ]
+        ],
+        "wipe_api_prefill": true
       },
       {
         "id": "extssd_6",
@@ -626,25 +724,29 @@
             "name": "drive_serial",
             "label": "Chassis Serial Number",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Shown on the wipe tool's device list before the wipe starts. Also printed on the physical drive label."
           },
           {
             "name": "drive_manufacturer",
             "label": "Manufacturer",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Brand shown by the wipe tool (e.g. Samsung, WD, Seagate, Crucial). Also on the drive label."
           },
           {
             "name": "drive_model",
             "label": "Model",
             "type": "text",
-            "required": true
+            "required": true,
+            "hint": "Model number shown by the wipe tool (e.g. MZ-V7S1T0B). Also on the drive label."
           },
           {
             "name": "drive_capacity_gb",
             "label": "Storage Capacity (GB \u2014 enter 0)",
             "type": "number",
-            "required": true
+            "required": true,
+            "hint": "Shown by the wipe tool and in BIOS. Numbers only \u2014 e.g. 512 for 512 GB, 1000 for 1 TB."
           }
         ]
       },
@@ -669,7 +771,8 @@
               "thin_client",
               "other"
             ],
-            "required": true
+            "required": true,
+            "hint": "Did the tool complete successfully? Select Pass if it finished with no errors."
           }
         ]
       },

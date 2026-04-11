@@ -1,47 +1,47 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { FiAlertCircle, FiArrowRight, FiCpu } from "react-icons/fi"
-import { api } from "../api/client"
 import Layout from "../components/Layout"
 
-const DEVICE_TYPES = [
-  { value: "laptop_hdd",         label: "Laptop — HDD (spinning disk)" },
-  { value: "laptop_ssd_sata",    label: "Laptop — SATA SSD" },
-  { value: "laptop_ssd_nvme",    label: "Laptop — NVMe SSD (M.2)" },
-  { value: "desktop_hdd",        label: "Desktop — HDD (spinning disk)" },
-  { value: "desktop_ssd",        label: "Desktop — SSD" },
-  { value: "tablet",             label: "Tablet / Mobile Device" },
-  { value: "drive_external_hdd", label: "External Drive — HDD" },
-  { value: "drive_external_ssd", label: "External Drive — SSD" },
-  { value: "no_storage",         label: "Device with No Storage" },
+const OPERATING_SYSTEMS = [
+  { value: "windows",        label: "Windows" },
+  { value: "linux",          label: "Linux" },
+  { value: "macos_apple",    label: "macOS — Apple Silicon (M1/M2/M3/M4)" },
+  { value: "macos_intel",    label: "macOS — Intel" },
+]
+
+const DEVICE_CATEGORIES = [
+  { value: "laptop",    label: "Laptop" },
+  { value: "desktop",   label: "Desktop" },
+  { value: "tablet",    label: "Tablet / Mobile Device" },
+  { value: "external",  label: "External Drive" },
 ]
 
 export default function DeviceIntake() {
   const [formData, setFormData] = useState({
     chassis_serial: "",
-    device_type: "laptop_hdd",
     make_model: "",
+    os: "windows",
+    device_category: "laptop",
   })
   const [error, setError] = useState("")
-  const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
-    setLoading(true)
-    try {
-      const response = await api.post("/api/devices", formData)
-      navigate(`/device/${response.data.device_id}`)
-    } catch (err: any) {
-      setError(err.response?.data?.detail || "Failed to create device. Please try again.")
-    } finally {
-      setLoading(false)
+    if (!formData.chassis_serial.trim()) {
+      setError("Chassis serial number is required.")
+      return
     }
+    if (!formData.make_model.trim()) {
+      setError("Make & model is required.")
+      return
+    }
+    navigate("/identify-drive", { state: formData })
   }
 
   const username = localStorage.getItem("username") || "—"
@@ -50,9 +50,27 @@ export default function DeviceIntake() {
     <Layout>
       <div className="max-w-6xl mx-auto">
         <div className="mb-10">
-          <h1 className="text-3xl font-extrabold text-white tracking-tight mb-2">Intake New Device</h1>
+          {/* Step indicator */}
+          <div className="flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-orange-600 text-white flex items-center justify-center text-sm font-bold">1</div>
+              <span className="text-sm font-semibold text-white">Device Details</span>
+            </div>
+            <div className="flex-1 h-px bg-slate-700 max-w-16"></div>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-slate-700 text-slate-400 flex items-center justify-center text-sm font-bold">2</div>
+              <span className="text-sm font-semibold text-slate-500">Identify Drive</span>
+            </div>
+            <div className="flex-1 h-px bg-slate-700 max-w-16"></div>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-slate-700 text-slate-400 flex items-center justify-center text-sm font-bold">3</div>
+              <span className="text-sm font-semibold text-slate-500">Wipe Procedure</span>
+            </div>
+          </div>
+
+          <h1 className="text-3xl font-extrabold text-white tracking-tight mb-2">Enter Device Details</h1>
           <p className="text-slate-400 max-w-2xl leading-relaxed">
-            Enter the donated device details below. The correct NIST sanitization procedure will be assigned automatically based on the device storage architecture.
+            Enter the basic device information. On the next step you'll identify the drive type so the correct NIST sanitization procedure can be assigned.
           </p>
         </div>
 
@@ -81,21 +99,6 @@ export default function DeviceIntake() {
                   <p className="text-xs text-slate-500 mt-1">Serial number on the chassis label — the drive serial is recorded during the procedure.</p>
                 </div>
 
-                <div className="col-span-2">
-                  <label className="block text-sm font-semibold text-slate-300 mb-2">Device Type</label>
-                  <select
-                    name="device_type"
-                    value={formData.device_type}
-                    onChange={handleChange}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-slate-100 focus:ring-2 focus:ring-orange-600 focus:border-orange-600 outline-none transition-all"
-                  >
-                    {DEVICE_TYPES.map((t) => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-slate-500 mt-1">This determines the NIST procedure. If unsure whether a laptop has SATA or NVMe, check BIOS storage settings.</p>
-                </div>
-
                 <div className="col-span-1">
                   <label className="block text-sm font-semibold text-slate-300 mb-2">Make &amp; Model</label>
                   <input
@@ -118,16 +121,45 @@ export default function DeviceIntake() {
                     className="w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-3 text-slate-500 cursor-not-allowed font-mono"
                   />
                 </div>
+
+                <div className="col-span-2">
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">Device Category</label>
+                  <select
+                    name="device_category"
+                    value={formData.device_category}
+                    onChange={handleChange}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-slate-100 focus:ring-2 focus:ring-orange-600 focus:border-orange-600 outline-none transition-all"
+                  >
+                    {DEVICE_CATEGORIES.map((c) => (
+                      <option key={c.value} value={c.value}>{c.label}</option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-slate-500 mt-1">General device category — the exact drive type is confirmed on the next step.</p>
+                </div>
+
+                <div className="col-span-2">
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">Operating System</label>
+                  <select
+                    name="os"
+                    value={formData.os}
+                    onChange={handleChange}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-slate-100 focus:ring-2 focus:ring-orange-600 focus:border-orange-600 outline-none transition-all"
+                  >
+                    {OPERATING_SYSTEMS.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-slate-500 mt-1">Used to provide OS-specific instructions for identifying the drive type in BIOS/System Report.</p>
+                </div>
               </div>
 
               <div className="pt-4 flex gap-4">
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="px-10 py-4 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-lg shadow-lg shadow-orange-600/20 flex items-center gap-3 transition-all active:scale-[0.98]"
+                  className="px-10 py-4 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-lg shadow-lg shadow-orange-600/20 flex items-center gap-3 transition-all active:scale-[0.98]"
                 >
-                  <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>assignment_turned_in</span>
-                  {loading ? "Registering..." : "Register Device"}
+                  <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>arrow_forward</span>
+                  Next: Identify Drive
                 </button>
                 <button
                   type="button"
@@ -148,9 +180,9 @@ export default function DeviceIntake() {
                   <span className="material-symbols-outlined text-blue-400">info</span>
                 </div>
                 <div>
-                  <h3 className="font-bold text-white mb-1" style={{ fontFamily: "Manrope, sans-serif" }}>NIST Assignment Engine</h3>
+                  <h3 className="font-bold text-white mb-1" style={{ fontFamily: "Manrope, sans-serif" }}>Why identify the drive first?</h3>
                   <p className="text-sm text-slate-400 leading-relaxed">
-                    Procedure will be auto-assigned based on device type and storage medium detected.
+                    NIST SP 800-88 Rev. 2 requires the sanitization method to match the physical storage type. Guessing wrong can invalidate the compliance certificate.
                   </p>
                 </div>
               </div>
@@ -159,21 +191,21 @@ export default function DeviceIntake() {
                 <div className="flex items-center gap-3 p-4 bg-slate-800 border border-slate-700 rounded-lg">
                   <span className="material-symbols-outlined text-slate-400">memory</span>
                   <div className="text-xs">
-                    <span className="font-bold text-slate-200 block">SSD / Flash Protocol</span>
+                    <span className="font-bold text-slate-200 block">SSD / NVMe / SATA Flash</span>
                     <span className="text-slate-400">NIST 800-88 Purge / Cryptographic Erase</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-4 bg-slate-800 border border-slate-700 rounded-lg">
                   <span className="material-symbols-outlined text-slate-400">hard_drive</span>
                   <div className="text-xs">
-                    <span className="font-bold text-slate-200 block">HDD / Magnetic Protocol</span>
+                    <span className="font-bold text-slate-200 block">HDD / Magnetic Spinning Disk</span>
                     <span className="text-slate-400">NIST 800-88 Clear / 3-Pass Overwrite</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 p-4 bg-slate-800 border border-slate-700 rounded-lg">
                   <span className="material-symbols-outlined text-slate-400">phonelink_erase</span>
                   <div className="text-xs">
-                    <span className="font-bold text-slate-200 block">Tablet / No Storage Protocol</span>
+                    <span className="font-bold text-slate-200 block">Tablet / No Storage</span>
                     <span className="text-slate-400">NIST 800-88 Clear / Factory Reset</span>
                   </div>
                 </div>

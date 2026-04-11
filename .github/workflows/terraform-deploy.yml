@@ -50,6 +50,9 @@ jobs:
       ec2_public_ip: ${{ steps.tfout.outputs.ec2_public_ip }}
       lambda_compliance_function_name: ${{ steps.tfout.outputs.lambda_compliance_function_name }}
       compliance_bucket_name: ${{ steps.tfout.outputs.compliance_bucket_name }}
+      athena_results_bucket_name: ${{ steps.tfout.outputs.athena_results_bucket_name }}
+      athena_workgroup_name: ${{ steps.tfout.outputs.athena_workgroup_name }}
+      athena_database_name: ${{ steps.tfout.outputs.athena_database_name }}
     steps:
       - uses: actions/checkout@v4
 
@@ -110,6 +113,9 @@ jobs:
           echo "ec2_public_ip=$(terraform output -raw ec2_public_ip)" >> "$GITHUB_OUTPUT"
           echo "lambda_compliance_function_name=$(terraform output -raw lambda_compliance_function_name)" >> "$GITHUB_OUTPUT"
           echo "compliance_bucket_name=$(terraform output -raw compliance_bucket_name)" >> "$GITHUB_OUTPUT"
+          echo "athena_results_bucket_name=$(terraform output -raw athena_results_bucket_name 2>/dev/null || echo '')" >> "$GITHUB_OUTPUT"
+          echo "athena_workgroup_name=$(terraform output -raw athena_workgroup_name 2>/dev/null || echo '')" >> "$GITHUB_OUTPUT"
+          echo "athena_database_name=$(terraform output -raw athena_database_name 2>/dev/null || echo '')" >> "$GITHUB_OUTPUT"
 
   backend:
     runs-on: ubuntu-latest
@@ -161,6 +167,9 @@ jobs:
           object_key="deployments/backend-${{ github.sha }}.tgz"
           lambda_fn="${{ needs.infra.outputs.lambda_compliance_function_name }}"
           compliance_bucket="${{ needs.infra.outputs.compliance_bucket_name }}"
+          athena_bucket="${{ needs.infra.outputs.athena_results_bucket_name }}"
+          athena_workgroup="${{ needs.infra.outputs.athena_workgroup_name }}"
+          athena_database="${{ needs.infra.outputs.athena_database_name }}"
 
           if [ -z "${JWT_SECRET_KEY:-}" ]; then
             echo "JWT_SECRET_KEY secret is not set in repository secrets" >&2
@@ -185,6 +194,12 @@ jobs:
               "printf 'JWT_SECRET_KEY=%s\\n' \"\$jwt\" >> backend/.env",
               "printf 'LAMBDA_COMPLIANCE_FUNCTION_NAME=${lambda_fn}\\n' >> backend/.env",
               "printf 'S3_COMPLIANCE_BUCKET=${compliance_bucket}\\n' >> backend/.env",
+              "printf 'ANALYTICS_MODE=backend\\n' >> backend/.env",
+              "printf 'ATHENA_ENABLED=false\\n' >> backend/.env",
+              "printf 'ATHENA_DATABASE=${athena_database}\\n' >> backend/.env",
+              "printf 'ATHENA_TABLE=devices_analytics\\n' >> backend/.env",
+              "printf 'ATHENA_WORKGROUP=${athena_workgroup}\\n' >> backend/.env",
+              "printf 'ATHENA_OUTPUT_S3=s3://${athena_bucket}/results/\\n' >> backend/.env",
               "python3 -m venv /opt/hackathon/venv",
               "/opt/hackathon/venv/bin/pip install --upgrade pip",
               "/opt/hackathon/venv/bin/pip install -r /opt/hackathon/backend/requirements.txt",
