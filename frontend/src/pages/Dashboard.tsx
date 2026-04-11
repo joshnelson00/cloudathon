@@ -36,12 +36,18 @@ const STATUS_CONFIG: Record<string, { color: string; label: string; dot: string 
 }
 
 const DEVICE_ICON: Record<string, string> = {
-  laptop_hdd:     "laptop_mac",
-  laptop_ssd:     "laptop_mac",
-  tablet:         "tablet",
-  phone:          "smartphone",
-  drive_external: "hard_drive",
-  no_storage:     "devices",
+  laptop_hdd:         "laptop_mac",
+  laptop_ssd:         "laptop_mac",
+  laptop_ssd_sata:    "laptop_mac",
+  laptop_ssd_nvme:    "laptop_mac",
+  desktop_hdd:        "computer",
+  desktop_ssd:        "computer",
+  tablet:             "tablet",
+  phone:              "smartphone",
+  drive_external:     "hard_drive",
+  drive_external_hdd: "hard_drive",
+  drive_external_ssd: "hard_drive",
+  no_storage:         "devices",
 }
 
 export default function Dashboard() {
@@ -81,22 +87,13 @@ export default function Dashboard() {
             <h1 className="text-3xl font-extrabold text-white tracking-tight">Device Dashboard</h1>
             <p className="text-slate-400 mt-1">Real-time overview of compliance and intake status.</p>
           </div>
-          <div className="flex gap-3">
-            <button
-              onClick={() => navigate("/search")}
-              className="border border-gray-700 text-gray-700 px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition flex items-center gap-2"
-            >
-              <FiSearch className="w-5 h-5" />
-              Search Devices
-            </button>
-            <button
-              onClick={() => navigate("/intake")}
-              className="bg-gray-700 text-white px-6 py-3 rounded-lg font-bold hover:bg-gray-800 transition flex items-center gap-2"
-            >
-              <FiPlus className="w-5 h-5" />
-              Intake New Device
-            </button>
-          </div>
+          <button
+            onClick={() => navigate("/intake")}
+            className="bg-orange-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-orange-700 transition flex items-center gap-2 active:scale-95"
+          >
+            <span className="material-symbols-outlined text-lg">add</span>
+            Intake New Device
+          </button>
         </section>
 
         {/* Stat Cards */}
@@ -196,7 +193,7 @@ export default function Dashboard() {
           )}
 
           <div className="px-6 py-4 bg-slate-800/20 flex justify-center border-t border-slate-800">
-            <button className="text-sm font-semibold text-slate-500 hover:text-orange-500 transition-colors">
+            <button onClick={() => navigate("/devices")} className="text-sm font-semibold text-slate-500 hover:text-orange-500 transition-colors">
               View All Devices
             </button>
           </div>
@@ -204,7 +201,6 @@ export default function Dashboard() {
 
         {/* Bottom Section */}
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Quick Action Card */}
           <div className="lg:col-span-3 bg-slate-950 border border-slate-800 rounded-lg p-8 relative overflow-hidden group">
             <div className="relative z-10">
               <h4 className="text-orange-500 font-bold uppercase tracking-widest text-xs mb-4">Quick Action</h4>
@@ -227,7 +223,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Compliance Distribution */}
           <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-lg p-6">
             <h3 className="font-bold text-white mb-5" style={{ fontFamily: "Manrope, sans-serif" }}>Compliance Distribution</h3>
             <div className="space-y-4">

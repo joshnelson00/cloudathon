@@ -48,68 +48,54 @@ export default function DeviceIntake() {
 
   return (
     <Layout>
-      <div className="max-w-2xl mx-auto">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <FiCpu className="text-blue-600" size={28} />
-            <h1 className="text-3xl font-bold text-gray-900">Device Intake</h1>
-          </div>
-          <p className="text-gray-600">
-            Register a new device for NIST SP 800-88 compliant destruction
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-10">
+          <h1 className="text-3xl font-extrabold text-white tracking-tight mb-2">Intake New Device</h1>
+          <p className="text-slate-400 max-w-2xl leading-relaxed">
+            Enter the donated device details below. The correct NIST sanitization procedure will be assigned automatically based on the device storage architecture.
           </p>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200 p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <FiAlertCircle className="text-red-600 mt-0.5 shrink-0" size={18} />
-                <p className="text-red-800 text-sm">{error}</p>
-              </div>
-            )}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          {/* Left: Form */}
+          <div className="lg:col-span-7">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {error && (
+                <div className="p-4 bg-red-900/30 border border-red-700 rounded-lg">
+                  <p className="text-red-300 text-sm">{error}</p>
+                </div>
+              )}
 
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">
-                Chassis Serial Number
-              </label>
-              <input
-                type="text"
-                name="chassis_serial"
-                value={formData.chassis_serial}
-                onChange={handleChange}
-                placeholder="e.g., SN-9920-XLT"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                The serial number on the chassis label — not the drive serial.
-                The drive serial is recorded during the procedure.
-              </p>
-            </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="col-span-2">
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">Chassis Serial Number</label>
+                  <input
+                    type="text"
+                    name="chassis_serial"
+                    value={formData.chassis_serial}
+                    onChange={handleChange}
+                    placeholder="e.g. SN-8829-XJ-01"
+                    required
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-orange-600 focus:border-orange-600 outline-none transition-all"
+                  />
+                  <p className="text-xs text-slate-500 mt-1">Serial number on the chassis label — the drive serial is recorded during the procedure.</p>
+                </div>
 
-            <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">
-                Device Type
-              </label>
-              <select
-                name="device_type"
-                value={formData.device_type}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {DEVICE_TYPES.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-gray-500 mt-1">
-                This determines the NIST procedure. If unsure whether a laptop
-                has SATA or NVMe, check the BIOS storage settings.
-              </p>
-            </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">Device Type</label>
+                  <select
+                    name="device_type"
+                    value={formData.device_type}
+                    onChange={handleChange}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-slate-100 focus:ring-2 focus:ring-orange-600 focus:border-orange-600 outline-none transition-all"
+                  >
+                    {DEVICE_TYPES.map((t) => (
+                      <option key={t.value} value={t.value}>{t.label}</option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-slate-500 mt-1">This determines the NIST procedure. If unsure whether a laptop has SATA or NVMe, check BIOS storage settings.</p>
+                </div>
 
-                {/* Make & Model */}
                 <div className="col-span-1">
                   <label className="block text-sm font-semibold text-slate-300 mb-2">Make &amp; Model</label>
                   <input
@@ -123,7 +109,6 @@ export default function DeviceIntake() {
                   />
                 </div>
 
-                {/* Worker ID (read-only) */}
                 <div className="col-span-1">
                   <label className="block text-sm font-semibold text-slate-500 mb-2">Worker ID</label>
                   <input
@@ -135,27 +120,71 @@ export default function DeviceIntake() {
                 </div>
               </div>
 
-            <div className="flex gap-4">
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 font-bold transition"
-              >
-                {loading ? "Creating..." : (
-                <span className="flex items-center justify-center gap-2">
-                  Start Procedure <FiArrowRight size={18} />
-                </span>
-              )}
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate("/")}
-                className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-bold transition"
-              >
-                Cancel
-              </button>
+              <div className="pt-4 flex gap-4">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-10 py-4 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-lg shadow-lg shadow-orange-600/20 flex items-center gap-3 transition-all active:scale-[0.98]"
+                >
+                  <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>assignment_turned_in</span>
+                  {loading ? "Registering..." : "Register Device"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate("/")}
+                  className="px-6 py-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-lg transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Right: Info Panel */}
+          <div className="lg:col-span-5">
+            <div className="bg-slate-900 border border-slate-700 rounded-xl p-8 sticky top-24">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="w-12 h-12 bg-blue-900/40 rounded-full flex items-center justify-center flex-shrink-0">
+                  <span className="material-symbols-outlined text-blue-400">info</span>
+                </div>
+                <div>
+                  <h3 className="font-bold text-white mb-1" style={{ fontFamily: "Manrope, sans-serif" }}>NIST Assignment Engine</h3>
+                  <p className="text-sm text-slate-400 leading-relaxed">
+                    Procedure will be auto-assigned based on device type and storage medium detected.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-4 bg-slate-800 border border-slate-700 rounded-lg">
+                  <span className="material-symbols-outlined text-slate-400">memory</span>
+                  <div className="text-xs">
+                    <span className="font-bold text-slate-200 block">SSD / Flash Protocol</span>
+                    <span className="text-slate-400">NIST 800-88 Purge / Cryptographic Erase</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-4 bg-slate-800 border border-slate-700 rounded-lg">
+                  <span className="material-symbols-outlined text-slate-400">hard_drive</span>
+                  <div className="text-xs">
+                    <span className="font-bold text-slate-200 block">HDD / Magnetic Protocol</span>
+                    <span className="text-slate-400">NIST 800-88 Clear / 3-Pass Overwrite</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-4 bg-slate-800 border border-slate-700 rounded-lg">
+                  <span className="material-symbols-outlined text-slate-400">phonelink_erase</span>
+                  <div className="text-xs">
+                    <span className="font-bold text-slate-200 block">Tablet / No Storage Protocol</span>
+                    <span className="text-slate-400">NIST 800-88 Clear / Factory Reset</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-slate-700 flex items-center gap-2">
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                <span className="text-xs text-slate-400 font-medium">Compliance Engine Online</span>
+              </div>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     </Layout>
