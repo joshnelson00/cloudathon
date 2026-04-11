@@ -291,7 +291,11 @@ def complete_device(
     }
 
     from ..pdf import generate_compliance_pdf
-    generate_compliance_pdf(cert_item)
+    import logging as _log
+    try:
+        generate_compliance_pdf(cert_item)
+    except Exception as e:
+        _log.getLogger("cityserve").warning("PDF generation failed: %s — device will still be marked documented", e)
     stable_doc_path = f"/api/compliance/{device_id}/download"
 
     table.update_item(

@@ -342,20 +342,24 @@ def generate_compliance_pdf(device: dict) -> str:
     pdf_bytes = _build_pdf_bytes(device)
     if not pdf_bytes:
         raise RuntimeError("PDF generation produced empty content")
-    s3_key    = f"compliance-docs/{device_id}.pdf"
 
+    # Always save locally so the /download endpoint works
+    local_path = f"/tmp/{device_id}.pdf"
+    with open(local_path, "wb") as f:
+        f.write(pdf_bytes)
+
+    # Also try uploading to S3 if bucket configured (best-effort)
     bucket = settings.s3_compliance_bucket
-    if not bucket:
-        local_path = f"/tmp/{device_id}.pdf"
-        with open(local_path, "wb") as f:
-            f.write(pdf_bytes)
-        return f"/api/compliance/{device_id}/download"
+    if bucket:
+        try:
+            s3_key = f"compliance-docs/{device_id}.pdf"
+            get_s3().put_object(
+                Bucket=bucket,
+                Key=s3_key,
+                Body=pdf_bytes,
+                ContentType="application/pdf",
+            )
+        except Exception:
+            logger.warning("S3 upload failed — PDF available via local download path only")
 
-    s3 = get_s3()
-    s3.put_object(
-        Bucket=bucket,
-        Key=s3_key,
-        Body=pdf_bytes,
-        ContentType="application/pdf",
-    )
     return f"/api/compliance/{device_id}/download"
