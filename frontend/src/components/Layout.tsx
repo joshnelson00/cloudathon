@@ -1,14 +1,48 @@
-import { ReactNode } from "react"
+import { ReactNode, useState, useEffect, useRef } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
+import { api } from "../api/client"
 
 interface LayoutProps {
   children: ReactNode
   showNav?: boolean
 }
 
+const DEVICE_TYPE_LABELS: Record<string, string> = {
+  laptop_hdd: "Laptop HDD",
+  laptop_ssd_sata: "Laptop SATA SSD",
+  laptop_ssd_nvme: "Laptop NVMe SSD",
+  desktop_hdd: "Desktop HDD",
+  desktop_ssd: "Desktop SSD",
+  tablet: "Tablet",
+  drive_external_hdd: "External HDD",
+  drive_external_ssd: "External SSD",
+  no_storage: "No Storage",
+}
+
 export default function Layout({ children, showNav = true }: LayoutProps) {
   const navigate = useNavigate()
   const location = useLocation()
+  const [notifOpen, setNotifOpen] = useState(false)
+  const [pendingDevices, setPendingDevices] = useState<any[]>([])
+  const notifRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    api.get("/api/devices").then((res) => {
+      const all = res.data.devices || []
+      const pending = all.filter((d: any) => d.status === "intake" || d.status === "in_progress")
+      setPendingDevices(pending)
+    }).catch(() => {})
+  }, [location.pathname])
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotifOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
   const handleLogout = () => {
     localStorage.removeItem("token")
@@ -97,7 +131,60 @@ export default function Layout({ children, showNav = true }: LayoutProps) {
           <span className="text-2xl font-black text-orange-600 md:hidden" style={{ fontFamily: "Manrope, sans-serif" }}>CityServe</span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="material-symbols-outlined text-slate-400 hover:text-white cursor-pointer transition-colors">notifications</span>
+          <div className="relative" ref={notifRef}>
+            <button
+              onClick={() => setNotifOpen((o) => !o)}
+              className="relative p-1 text-slate-400 hover:text-white transition-colors"
+            >
+              <span className="material-symbols-outlined" style={{ fontVariationSettings: notifOpen ? "'FILL' 1" : "'FILL' 0" }}>notifications</span>
+              {pendingDevices.length > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                  {pendingDevices.length > 9 ? "9+" : pendingDevices.length}
+                </span>
+              )}
+            </button>
+
+            {notifOpen && (
+              <div className="absolute right-0 top-10 w-80 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl z-50 overflow-hidden">
+                <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+                  <span className="text-sm font-bold text-white">Pending Devices</span>
+                  <span className="text-xs text-slate-400">{pendingDevices.length} need attention</span>
+                </div>
+                <div className="max-h-72 overflow-y-auto">
+                  {pendingDevices.length === 0 ? (
+                    <div className="px-4 py-6 text-center text-slate-500 text-sm">All caught up!</div>
+                  ) : (
+                    pendingDevices.map((d) => (
+                      <button
+                        key={d.device_id}
+                        onClick={() => { navigate(`/device/${d.device_id}`); setNotifOpen(false) }}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-800 transition-colors text-left border-b border-slate-800/50 last:border-0"
+                      >
+                        <div className={`w-2 h-2 rounded-full flex-shrink-0 ${d.status === "intake" ? "bg-yellow-400" : "bg-blue-400"}`} />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-slate-200 truncate">{d.chassis_serial}</p>
+                          <p className="text-xs text-slate-500">{DEVICE_TYPE_LABELS[d.device_type] || d.device_type}</p>
+                        </div>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${d.status === "intake" ? "bg-yellow-400/10 text-yellow-400" : "bg-blue-400/10 text-blue-400"}`}>
+                          {d.status === "intake" ? "New" : "In Progress"}
+                        </span>
+                      </button>
+                    ))
+                  )}
+                </div>
+                {pendingDevices.length > 0 && (
+                  <div className="px-4 py-3 border-t border-slate-800">
+                    <button
+                      onClick={() => { navigate("/"); setNotifOpen(false) }}
+                      className="text-xs text-orange-500 hover:text-orange-400 font-semibold"
+                    >
+                      View all on Dashboard →
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
           <button
             onClick={handleLogout}
             className="bg-orange-600 text-white px-4 py-2 text-sm font-bold rounded hover:bg-orange-700 transition-colors active:scale-95"
