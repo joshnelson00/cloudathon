@@ -603,16 +603,9 @@
     "device_type": "laptop_hdd",
     "make_model": "Dell G15",
     "intake_timestamp": "2026-04-11T05:11:06.060354+00:00",
-    "status": "documented",
+    "status": "in_progress",
     "procedure_id": "hdd_purge_v1",
     "steps_completed": [
-      {
-        "step_id": "hdd_1",
-        "confirmed": true,
-        "notes": "",
-        "input_data": {},
-        "timestamp": "2026-04-11T05:11:09.240323+00:00"
-      },
       {
         "step_id": "hdd_2",
         "confirmed": true,
@@ -679,6 +672,12 @@
         "notes": "",
         "input_data": {},
         "timestamp": "2026-04-11T05:12:03.169113+00:00"
+      },
+      {
+        "step_id": "hdd_1",
+        "confirmed": true,
+        "notes": "",
+        "timestamp": "2026-04-11T05:52:02.155653+00:00"
       }
     ],
     "comp_doc": "https://hackathon-dev-compliance-docs-412381748467.s3.amazonaws.com/compliance-docs/8e7367f1-8122-4502-a854-a5af626f0c83.pdf?AWSAccessKeyId=AKIAWAA66DTZ4Q5XZE5U&Signature=S5igQfk2X5UR3czZbNgqr92lSAg%3D&Expires=1775887929",
