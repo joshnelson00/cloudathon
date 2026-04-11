@@ -73,6 +73,26 @@ def list_devices():
     return {"devices": items}
 
 
+@router.get("/devices/search")
+def search_devices(q: str = ""):
+    """Search devices by type, serial, make/model, or status."""
+    result = get_devices_table().scan()
+    items = result.get("Items", [])
+
+    if q.strip():
+        q_lower = q.lower()
+        items = [
+            item for item in items
+            if (q_lower in item.get("device_type", "").lower() or
+                q_lower in item.get("chassis_serial", "").lower() or
+                q_lower in item.get("make_model", "").lower() or
+                q_lower in item.get("status", "").lower())
+        ]
+
+    items.sort(key=lambda x: x.get("intake_timestamp", ""), reverse=True)
+    return {"devices": items}
+
+
 @router.get("/devices/{device_id}", response_model=DeviceDetail)
 def get_device(device_id: str):
     result = get_devices_table().get_item(Key={"device_id": device_id})

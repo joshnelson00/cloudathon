@@ -1,5 +1,12 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
+import {
+  FiBarChart2,
+  FiZap,
+  FiCheckCircle,
+  FiPlus,
+  FiSearch,
+} from "react-icons/fi"
 import { api } from "../api/client"
 import Layout from "../components/Layout"
 
@@ -74,13 +81,22 @@ export default function Dashboard() {
             <h1 className="text-3xl font-extrabold text-white tracking-tight">Device Dashboard</h1>
             <p className="text-slate-400 mt-1">Real-time overview of compliance and intake status.</p>
           </div>
-          <button
-            onClick={() => navigate("/intake")}
-            className="bg-orange-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-orange-700 transition flex items-center gap-2 active:scale-95"
-          >
-            <span className="material-symbols-outlined text-lg">add</span>
-            Intake New Device
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => navigate("/search")}
+              className="border border-gray-700 text-gray-700 px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition flex items-center gap-2"
+            >
+              <FiSearch className="w-5 h-5" />
+              Search Devices
+            </button>
+            <button
+              onClick={() => navigate("/intake")}
+              className="bg-gray-700 text-white px-6 py-3 rounded-lg font-bold hover:bg-gray-800 transition flex items-center gap-2"
+            >
+              <FiPlus className="w-5 h-5" />
+              Intake New Device
+            </button>
+          </div>
         </section>
 
         {/* Stat Cards */}
