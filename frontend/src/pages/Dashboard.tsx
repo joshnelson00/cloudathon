@@ -11,6 +11,17 @@ interface DeviceStats {
   by_type: Record<string, number>
 }
 
+interface OperationalStats {
+  total_devices: number
+  processed_today: number
+  completion_rate_pct: number
+  wipe_pass_rate_pct: number | null
+  wipe_pass: number
+  wipe_fail: number
+  total_steps_logged: number
+  by_device_type: Record<string, number>
+}
+
 interface Device {
   device_id: string
   chassis_serial?: string
@@ -65,6 +76,7 @@ const DEVICE_ICON: Record<string, string> = {
 
 export default function Dashboard() {
   const [stats, setStats] = useState<DeviceStats>({ total: 0, in_progress: 0, completed: 0, by_type: {} })
+  const [opStats, setOpStats] = useState<OperationalStats | null>(null)
   const [devices, setDevices] = useState<Device[]>([])
   const [loading, setLoading] = useState(true)
   const [addLoading, setAddLoading] = useState(false)
@@ -80,12 +92,14 @@ export default function Dashboard() {
     const load = async () => {
       try {
         setLoading(true)
-        const [statsRes, devicesRes] = await Promise.all([
+        const [statsRes, devicesRes, opStatsRes] = await Promise.all([
           api.get("/api/dashboard"),
           api.get("/api/devices"),
+          api.get("/api/stats"),
         ])
         setStats(statsRes.data)
         setDevices(devicesRes.data.devices || [])
+        setOpStats(opStatsRes.data)
       } catch {
         // show zeros on error
       } finally {
@@ -336,27 +350,42 @@ export default function Dashboard() {
           </div>
 
           <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-lg p-6">
-            <h3 className="font-bold text-white mb-5" style={{ fontFamily: "Manrope, sans-serif" }}>Compliance Distribution</h3>
+            <h3 className="font-bold text-white mb-5" style={{ fontFamily: "Manrope, sans-serif" }}>Live Operational Stats</h3>
             <div className="space-y-4">
-              {[
-                { label: "Mobile Units",  pct: 88 },
-                { label: "Workstations",  pct: 94 },
-                { label: "Field Tablets", pct: 72 },
-              ].map(({ label, pct }) => (
-                <div key={label}>
-                  <div className="flex justify-between text-xs font-bold mb-1 uppercase tracking-wider text-slate-400">
-                    <span>{label}</span><span>{pct}%</span>
-                  </div>
-                  <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                    <div className="bg-orange-600 h-full rounded-full" style={{ width: `${pct}%` }} />
-                  </div>
+              <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-blue-400 text-lg">today</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Processed Today</span>
                 </div>
-              ))}
+                <span className="text-xl font-black text-white">{opStats?.processed_today ?? "—"}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-emerald-400 text-lg">checklist</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Steps Logged</span>
+                </div>
+                <span className="text-xl font-black text-white">{opStats?.total_steps_logged ?? "—"}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-orange-400 text-lg">check_circle</span>
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Wipe Pass / Fail</span>
+                </div>
+                <span className="text-sm font-black">
+                  <span className="text-emerald-400">{opStats?.wipe_pass ?? 0} pass</span>
+                  <span className="text-slate-600 mx-1">/</span>
+                  <span className="text-red-400">{opStats?.wipe_fail ?? 0} fail</span>
+                </span>
+              </div>
             </div>
-            <div className="mt-8 pt-6 border-t border-slate-800 flex items-center justify-between">
+            <div className="mt-6 pt-5 border-t border-slate-800 flex items-center justify-between">
               <div>
-                <p className="text-2xl font-bold text-white">96.4%</p>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Global Compliance Rating</p>
+                <p className="text-2xl font-bold text-white">
+                  {opStats?.wipe_pass_rate_pct != null ? `${opStats.wipe_pass_rate_pct}%` : `${opStats?.completion_rate_pct ?? 0}%`}
+                </p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  {opStats?.wipe_pass_rate_pct != null ? "Wipe Pass Rate" : "Completion Rate"}
+                </p>
               </div>
               <span className="material-symbols-outlined text-emerald-500 text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
             </div>
