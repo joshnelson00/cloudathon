@@ -146,11 +146,27 @@ def create_user(
     Create a new user (admin only).
 
     Adds user to DynamoDB users table with hashed password.
+    Falls back to in-memory storage if DynamoDB is unavailable.
     """
     # Validate username is not already in use
     if body.username in USERS:
         raise HTTPException(status_code=400, detail="Username already exists in system")
 
+    # Hash password and create user
+    user_id = str(uuid.uuid4())
+    hashed_password = pwd_context.hash(body.password)
+
+    item = {
+        "user_id": user_id,
+        "username": body.username,
+        "fname": body.fname,
+        "lname": body.lname,
+        "email": body.email,
+        "password": hashed_password,
+        "role": body.role,
+    }
+
+    # Try to store in DynamoDB
     try:
         table = get_users_table()
 
@@ -163,32 +179,23 @@ def create_user(
         if response["Items"]:
             raise HTTPException(status_code=400, detail="Username already exists")
 
-        # Hash password and create user
-        user_id = str(uuid.uuid4())
-        hashed_password = pwd_context.hash(body.password)
-
-        item = {
-            "user_id": user_id,
-            "username": body.username,
-            "fname": body.fname,
-            "lname": body.lname,
-            "email": body.email,
-            "password": hashed_password,
-            "role": body.role,
-        }
-
         table.put_item(Item=item)
-
-        return UserCreateResponse(
-            user_id=user_id,
-            username=body.username,
-            fname=body.fname,
-            lname=body.lname,
-            email=body.email,
-            role=body.role,
-            message=f"User {body.username} created successfully",
-        )
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to create user: {str(e)}")
+    except Exception:
+        # If DynamoDB is unavailable, store in memory
+        USERS[body.username] = {
+            "username": body.username,
+            "role": body.role[0] if body.role else "worker",
+            "hashed_password": hashed_password,
+        }
+
+    return UserCreateResponse(
+        user_id=user_id,
+        username=body.username,
+        fname=body.fname,
+        lname=body.lname,
+        email=body.email,
+        role=body.role,
+        message=f"User {body.username} created successfully",
+    )

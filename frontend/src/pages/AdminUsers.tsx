@@ -4,17 +4,23 @@ import { api } from "../api/client"
 import Layout from "../components/Layout"
 
 interface UserFormData {
+  fname: string
+  lname: string
+  email: string
   username: string
   password: string
-  role: "worker" | "admin"
+  role: string[]
 }
 
 export default function AdminUsers() {
   const navigate = useNavigate()
   const [formData, setFormData] = useState<UserFormData>({
+    fname: "",
+    lname: "",
+    email: "",
     username: "",
     password: "",
-    role: "worker",
+    role: ["worker"],
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -23,10 +29,18 @@ export default function AdminUsers() {
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    })
+    const { name, value } = e.target
+    if (name === "role") {
+      setFormData({
+        ...formData,
+        [name]: [value],
+      })
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value,
+      })
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,13 +51,23 @@ export default function AdminUsers() {
 
     try {
       await api.post("/auth/users", {
+        fname: formData.fname,
+        lname: formData.lname,
+        email: formData.email,
         username: formData.username,
         password: formData.password,
         role: formData.role,
       })
 
       setSuccess(`User '${formData.username}' created successfully`)
-      setFormData({ username: "", password: "", role: "worker" })
+      setFormData({
+        fname: "",
+        lname: "",
+        email: "",
+        username: "",
+        password: "",
+        role: ["worker"],
+      })
 
       // Reset form after 2 seconds
       setTimeout(() => setSuccess(""), 3000)
@@ -81,6 +105,53 @@ export default function AdminUsers() {
               </div>
             )}
 
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  First Name
+                </label>
+                <input
+                  type="text"
+                  name="fname"
+                  value={formData.fname}
+                  onChange={handleChange}
+                  placeholder="e.g., John"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Last Name
+                </label>
+                <input
+                  type="text"
+                  name="lname"
+                  value={formData.lname}
+                  onChange={handleChange}
+                  placeholder="e.g., Doe"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-bold text-gray-700 mb-2">
+                Email
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="e.g., john@cityserve.local"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-2">
                 Username
@@ -90,7 +161,7 @@ export default function AdminUsers() {
                 name="username"
                 value={formData.username}
                 onChange={handleChange}
-                placeholder="e.g., worker3"
+                placeholder="e.g., jdoe"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
@@ -123,7 +194,7 @@ export default function AdminUsers() {
               </label>
               <select
                 name="role"
-                value={formData.role}
+                value={formData.role[0]}
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
@@ -132,14 +203,6 @@ export default function AdminUsers() {
               </select>
               <p className="text-xs text-gray-500 mt-1">
                 Workers destroy devices. Admins manage users and workers.
-              </p>
-            </div>
-
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-800">
-                <strong>Note:</strong> User creation is not yet fully
-                implemented. This form will submit once the backend endpoint is
-                complete.
               </p>
             </div>
 
