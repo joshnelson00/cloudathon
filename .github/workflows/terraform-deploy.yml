@@ -159,7 +159,7 @@ jobs:
               "aws s3 cp s3://${bucket}/${object_key} backend.tgz",
               "rm -rf backend && mkdir -p backend",
               "tar -xzf backend.tgz -C backend",
-              "python3.14 -m venv /opt/hackathon/venv",
+              "python3 -m venv /opt/hackathon/venv",
               "/opt/hackathon/venv/bin/pip install --upgrade pip",
               "/opt/hackathon/venv/bin/pip install -r /opt/hackathon/backend/requirements.txt",
               "systemctl daemon-reload",

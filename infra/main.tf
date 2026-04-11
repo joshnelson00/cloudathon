@@ -104,6 +104,7 @@ resource "aws_instance" "app" {
 
   user_data = <<-EOF
     #!/bin/bash
+    set -euo pipefail
     dnf update -y
     dnf install -y python3 python3-pip git awscli amazon-ssm-agent
     systemctl enable --now amazon-ssm-agent
@@ -117,6 +118,7 @@ resource "aws_instance" "app" {
     [Service]
     Type=simple
     WorkingDirectory=/opt/hackathon/backend
+    Environment="PATH=/opt/hackathon/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
     ExecStart=/opt/hackathon/venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
     Restart=always
     RestartSec=5
@@ -157,7 +159,7 @@ resource "aws_iam_role_policy_attachment" "ec2_ssm" {
 
 resource "aws_iam_role_policy_attachment" "ec2_s3_read" {
   role       = aws_iam_role.ec2.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
 }
 
 resource "aws_iam_role_policy" "ec2_app_access" {
@@ -173,7 +175,8 @@ resource "aws_iam_role_policy" "ec2_app_access" {
           "dynamodb:GetItem",
           "dynamodb:PutItem",
           "dynamodb:UpdateItem",
-          "dynamodb:Query"
+          "dynamodb:Query",
+          "dynamodb:Scan"
         ]
         Resource = [
           aws_dynamodb_table.devices.arn,
