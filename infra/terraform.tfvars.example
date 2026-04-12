@@ -1,7 +1,0 @@
-project_name        = "hackathon"
-environment         = "dev"
-region              = "us-west-1"
-ec2_instance_type   = "t3.micro"
-ec2_key_name        = null
-allowed_ssh_cidr    = "0.0.0.0/0"
-frontend_bucket_name = ""

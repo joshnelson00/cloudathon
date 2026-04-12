@@ -11,22 +11,10 @@ class Settings(BaseSettings):
     allowed_origins: str = "*"
     service_endpoints_json: dict[str, str] = Field(default_factory=dict)
 
-    # Database configuration
-    use_mock_db: bool = False  # Switch to real DynamoDB
-    aws_region: str = "us-west-1"
-    dynamodb_devices_table: str = "hackathon-dev-devices"
-    dynamodb_procedures_table: str = "hackathon-dev-procedures"
-    dynamodb_users_table: str = "hackathon-dev-users"
-    s3_compliance_bucket: str = ""
-    lambda_compliance_function_name: str = ""
-
-    # Analytics configuration
-    analytics_mode: str = "backend"  # backend | athena
-    athena_enabled: bool = False
-    athena_database: str = ""
-    athena_table: str = ""
-    athena_workgroup: str = ""
-    athena_output_s3: str = ""
+    # Database table names (used as JSON filenames in data/)
+    devices_table: str = "hackathon-dev-devices"
+    procedures_table: str = "hackathon-dev-procedures"
+    users_table: str = "hackathon-dev-users"
 
     jwt_secret_key: str = Field(default=..., description="JWT signing secret — must be set via JWT_SECRET_KEY env var")
     jwt_expire_minutes: int = 480

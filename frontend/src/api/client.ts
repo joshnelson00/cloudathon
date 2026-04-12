@@ -17,8 +17,7 @@ const getBaseURL = (): string => {
       return "http://localhost:8000"
     }
 
-    // If running on a deployed domain, API is routed through the same origin
-    // via CloudFront path behaviors (/api/*, /health) — no port needed
+    // If running on a deployed domain, API is on the same origin
     return `${protocol}//${hostname}`
   }
 

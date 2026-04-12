@@ -2,18 +2,14 @@ from __future__ import annotations
 
 from datetime import datetime, timezone, timedelta
 import re
-import time
 from typing import Any
 
-import boto3
 from fastapi import APIRouter
 from pydantic import BaseModel
 
-from ..config import get_settings
 from ..db import get_devices_table
 
 router = APIRouter()
-settings = get_settings()
 
 
 class AnalyticsQueryRequest(BaseModel):
@@ -23,21 +19,13 @@ class AnalyticsQueryRequest(BaseModel):
 class AnalyticsQueryResponse(BaseModel):
     answer: str
     data: dict[str, Any]
-    mode: str
     intent: str
-    generated_sql: str | None = None
 
 
 def _scan_all_devices() -> list[dict[str, Any]]:
     table = get_devices_table()
     response = table.scan()
-    items = list(response.get("Items", []))
-
-    while "LastEvaluatedKey" in response:
-        response = table.scan(ExclusiveStartKey=response["LastEvaluatedKey"])
-        items.extend(response.get("Items", []))
-
-    return items
+    return list(response.get("Items", []))
 
 
 def _parse_dt(value: str | None) -> datetime | None:
@@ -98,7 +86,7 @@ def _intent_from_query(query: str) -> str:
     return "total_devices"
 
 
-def _compute_backend(intent: str, devices: list[dict[str, Any]]) -> tuple[str, dict[str, Any]]:
+def _compute(intent: str, devices: list[dict[str, Any]]) -> tuple[str, dict[str, Any]]:
     now = datetime.now(timezone.utc)
     start_week = _start_of_week_utc(now)
     stale_cutoff = now - timedelta(days=7)
@@ -273,113 +261,15 @@ def _compute_backend(intent: str, devices: list[dict[str, Any]]) -> tuple[str, d
     return (f"There are {count} devices in the system.", {"count": count})
 
 
-def _intent_to_athena_sql(intent: str, database: str, table: str) -> str | None:
-    if not database or not table:
-        return None
-
-    if intent == "laptops_failed_this_week":
-        return (
-            f"SELECT COUNT(*) AS c FROM {database}.{table} "
-            "WHERE lower(device_type) LIKE '%laptop%' AND wipe_result = false "
-            "AND from_iso8601_timestamp(intake_timestamp) >= date_trunc('week', current_timestamp)"
-        )
-
-    if intent == "processed_today":
-        return (
-            f"SELECT COUNT(*) AS c FROM {database}.{table} "
-            "WHERE date(from_iso8601_timestamp(intake_timestamp)) = current_date"
-        )
-
-    if intent == "laptops_vs_desktops":
-        return (
-            f"SELECT "
-            "SUM(CASE WHEN lower(device_type) LIKE '%laptop%' THEN 1 ELSE 0 END) AS laptops, "
-            "SUM(CASE WHEN lower(device_type) LIKE '%desktop%' THEN 1 ELSE 0 END) AS desktops "
-            f"FROM {database}.{table}"
-        )
-
-    if intent == "in_progress":
-        return (
-            f"SELECT COUNT(*) AS c FROM {database}.{table} "
-            "WHERE lower(status) IN ('intake','in_progress','verified')"
-        )
-
-    if intent == "failed_wipes":
-        return f"SELECT COUNT(*) AS c FROM {database}.{table} WHERE wipe_result = false"
-
-    if intent == "total_devices":
-        return f"SELECT COUNT(*) AS c FROM {database}.{table}"
-
-    # For unsupported intents, let the caller fall back to backend-filter mode.
-    return None
-
-
-def _query_athena(sql: str) -> dict[str, Any]:
-    client = boto3.client("athena", region_name=settings.aws_region)
-    start = client.start_query_execution(
-        QueryString=sql,
-        WorkGroup=settings.athena_workgroup,
-        ResultConfiguration={"OutputLocation": settings.athena_output_s3},
-    )
-    qid = start["QueryExecutionId"]
-
-    for _ in range(40):
-        status = client.get_query_execution(QueryExecutionId=qid)["QueryExecution"]["Status"]["State"]
-        if status in {"SUCCEEDED", "FAILED", "CANCELLED"}:
-            break
-        time.sleep(0.5)
-    else:
-        return {"ok": False, "error": "Athena query timed out"}
-
-    if status != "SUCCEEDED":
-        return {"ok": False, "error": f"Athena query {status.lower()}"}
-
-    rows = client.get_query_results(QueryExecutionId=qid).get("ResultSet", {}).get("Rows", [])
-    if len(rows) < 2:
-        return {"ok": False, "error": "Athena returned no data"}
-
-    header = [c.get("VarCharValue", "") for c in rows[0].get("Data", [])]
-    values = [c.get("VarCharValue", "") for c in rows[1].get("Data", [])]
-    parsed: dict[str, Any] = {}
-    for k, v in zip(header, values):
-        if v.isdigit():
-            parsed[k] = int(v)
-        else:
-            parsed[k] = v
-
-    return {"ok": True, "data": parsed}
-
-
 @router.post("/analytics/query", response_model=AnalyticsQueryResponse)
 def analytics_query(body: AnalyticsQueryRequest):
     query = body.query.strip()
     intent = _intent_from_query(query)
 
-    if settings.athena_enabled and settings.analytics_mode == "athena":
-        sql = _intent_to_athena_sql(intent, settings.athena_database, settings.athena_table)
-        if sql and settings.athena_workgroup and settings.athena_output_s3:
-            result = _query_athena(sql)
-            if result.get("ok"):
-                data = result["data"]
-                if "laptops" in data and "desktops" in data:
-                    answer = f"Laptops: {data['laptops']}. Desktops: {data['desktops']}."
-                else:
-                    count = int(data.get("c", 0))
-                    answer = f"Query result count: {count}."
-                return AnalyticsQueryResponse(
-                    answer=answer,
-                    data=data,
-                    mode="athena",
-                    intent=intent,
-                    generated_sql=sql,
-                )
-
     devices = _scan_all_devices()
-    answer, data = _compute_backend(intent, devices)
+    answer, data = _compute(intent, devices)
     return AnalyticsQueryResponse(
         answer=answer,
         data=data,
-        mode="backend-filter",
         intent=intent,
-        generated_sql=None,
     )

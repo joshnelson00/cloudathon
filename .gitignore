@@ -9,14 +9,6 @@ backend/.env
 node_modules/
 frontend/dist/
 
-# Terraform
-.terraform/
-*.tfstate
-*.tfstate.*
-terraform.tfvars
-
-# Lambda layer build artifacts
-infra/lambda/.layer_build/
 .env
 # IDE
 .vscode/
