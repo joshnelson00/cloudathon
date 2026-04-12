@@ -25,9 +25,9 @@ DEVICE_TYPE_TO_PROCEDURE = {
 }
 
 # Pull procedures directly from the seed file
-from seed_procedures import PROCEDURES
+from seed_mock_db import PROCEDURES
 
-PROCEDURE_MAP = {p["procedure_id"]: p for p in PROCEDURES}
+PROCEDURE_MAP = PROCEDURES
 
 
 def lookup(device_type: str):

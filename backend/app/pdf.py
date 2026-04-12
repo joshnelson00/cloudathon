@@ -1,7 +1,5 @@
 """
-Generates a NIST SP 800-88 Rev. 2 Certificate of Sanitization and uploads
-it to S3. Returns the S3 pre-signed URL (or a local download path when S3
-is not configured).
+Generates a NIST SP 800-88 Rev. 2 Certificate of Sanitization as a local PDF.
 
 Required certificate fields per NIST SP 800-88r2 §4.6:
   - Media manufacturer, model, serial, type, capacity
@@ -11,9 +9,7 @@ Required certificate fields per NIST SP 800-88r2 §4.6:
   - Technician name, title, date, location, contact, signature
 """
 import io
-import json
 import logging
-import os
 from datetime import datetime, timezone
 from decimal import Decimal
 
@@ -24,11 +20,6 @@ from reportlab.lib import colors
 from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable
 )
-
-from .config import get_settings
-from .db import get_s3
-
-settings = get_settings()
 
 # ── Label maps ────────────────────────────────────────────────────────────────
 
@@ -282,84 +273,26 @@ def _build_pdf_bytes(device: dict) -> bytes:
     return buffer.getvalue()
 
 
-# ── Lambda invocation ────────────────────────────────────────────────────────
+# ── Public entry point ────────────────────────────────────────────────────────
 
 logger = logging.getLogger(__name__)
 
 
-def _decimal_default(obj):
-    if isinstance(obj, Decimal):
-        return int(obj) if obj == int(obj) else float(obj)
-    return str(obj)
-
-
-def _generate_via_lambda(device: dict) -> str:
-    """Invoke the compliance Lambda and return the S3 pre-signed URL."""
-    import boto3
-
-    client = boto3.client("lambda", region_name=settings.aws_region)
-    response = client.invoke(
-        FunctionName=settings.lambda_compliance_function_name,
-        InvocationType="RequestResponse",
-        Payload=json.dumps(device, default=_decimal_default),
-    )
-    payload = json.loads(response["Payload"].read())
-
-    if response.get("FunctionError"):
-        raise RuntimeError(f"Lambda error: {payload}")
-
-    body = payload if isinstance(payload.get("body"), dict) else {
-        **payload,
-        "body": json.loads(payload["body"]) if isinstance(payload.get("body"), str) else payload,
-    }
-    return body["body"]["pdf_url"]
-
-
-# ── Public entry point ────────────────────────────────────────────────────────
-
 def generate_compliance_pdf(device: dict) -> str:
     """
-    Builds the PDF and uploads to S3 if a bucket is configured.
-    When running in AWS with a Lambda configured, delegates PDF generation
-    to the Lambda function. Falls back to local generation on error.
-    Returns the S3 pre-signed URL, or the local download path if no bucket is set.
+    Builds the PDF and saves it locally.
+    Returns the local download path.
     """
     device_id = str(device.get("device_id", "")).strip()
     if not device_id:
         raise ValueError("device_id is required to generate a compliance PDF")
 
-    # Delegate to Lambda if configured (AWS environment)
-    if settings.lambda_compliance_function_name:
-        try:
-            _generate_via_lambda(device)
-            return f"/api/compliance/{device_id}/download"
-        except Exception:
-            logger.exception(
-                "Lambda compliance PDF generation failed — falling back to local"
-            )
-
-    # Local / fallback path
     pdf_bytes = _build_pdf_bytes(device)
     if not pdf_bytes:
         raise RuntimeError("PDF generation produced empty content")
 
-    # Always save locally so the /download endpoint works
     local_path = f"/tmp/{device_id}.pdf"
     with open(local_path, "wb") as f:
         f.write(pdf_bytes)
-
-    # Also try uploading to S3 if bucket configured (best-effort)
-    bucket = settings.s3_compliance_bucket
-    if bucket:
-        try:
-            s3_key = f"compliance-docs/{device_id}.pdf"
-            get_s3().put_object(
-                Bucket=bucket,
-                Key=s3_key,
-                Body=pdf_bytes,
-                ContentType="application/pdf",
-            )
-        except Exception:
-            logger.warning("S3 upload failed — PDF available via local download path only")
 
     return f"/api/compliance/{device_id}/download"

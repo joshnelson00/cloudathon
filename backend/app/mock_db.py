@@ -1,12 +1,10 @@
 """
-Mock Database Implementation
+JSON File Database Implementation
 
-Provides a DynamoDB-like interface using JSON files for local development.
-This allows the demo to run without AWS credentials or DynamoDB tables.
+Provides a table-oriented interface using JSON files for persistent storage.
 
 Data Structure:
-- data/devices.json - Device records
-- data/procedures.json - Sanitization procedures
+- data/<table-name>.json per table (devices, procedures, users)
 """
 
 import json
@@ -17,7 +15,7 @@ from datetime import datetime
 
 
 class MockTable:
-    """Mimics DynamoDB Table interface using JSON file storage."""
+    """Table interface using JSON file storage."""
 
     def __init__(self, table_name: str, data_dir: str = "data"):
         self.table_name = table_name
@@ -166,7 +164,7 @@ class MockTable:
 
 
 class MockDatabase:
-    """Mock DynamoDB resource using JSON files."""
+    """Database resource using JSON files."""
 
     def __init__(self, data_dir: str = "data"):
         self.data_dir = data_dir
